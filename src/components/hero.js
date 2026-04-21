@@ -31,13 +31,21 @@ function normalizeValue(value) {
  * Looks up a personalised hero image from the DAM based on the last product
  * the user interacted with in their Lytics profile.
  *
+ * Starts in a holding state (ready: false) so the hero never renders the
+ * base/Personalize image before we know whether a DAM image exists.
+ * Because the Lytics profile loads almost instantly, this hold is
+ * imperceptible to users.
+ *
  * Returns:
  *   personalizedImageUrl — the DAM image URL, or null if none found
- *   isResolving          — true only while an active fetch is in flight
+ *   ready                — false until we have a definitive answer (hold render)
  *   lyticsUser           — raw Lytics user object for any other profile fields
  */
 function usePersonalizedHeroImage() {
   const lyticsProfile = useEntity();
+
+  // Track whether the Lytics profile itself has loaded yet
+  const profileLoaded = lyticsProfile !== undefined && lyticsProfile !== null;
   const lyticsUser = lyticsProfile?.data?.user || null;
 
   const productName =
@@ -51,21 +59,29 @@ function usePersonalizedHeroImage() {
   );
 
   const [personalizedImageUrl, setPersonalizedImageUrl] = useState(null);
-  const [lookupComplete, setLookupComplete] = useState(false);
+
+  // Start not ready — hold the render until we have a definitive answer.
+  // This prevents the base image flashing before the DAM image is known.
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    // Profile hasn't loaded yet — keep holding
+    if (!profileLoaded) return;
+
     let cancelled = false;
 
     async function resolve() {
-      // No product in profile — nothing to look up, unblock immediately
+      // Profile loaded but no product in it — release hold immediately
+      // and show Personalize/base image
       if (!normalizedProductName) {
-        setPersonalizedImageUrl(null);
-        setLookupComplete(true);
+        if (!cancelled) {
+          setPersonalizedImageUrl(null);
+          setReady(true);
+        }
         return;
       }
 
-      setLookupComplete(false);
-
+      // Product found in profile — fetch the DAM image before releasing hold
       try {
         const res = await fetch(
           `/api/personalized-hero?product_name=${encodeURIComponent(normalizedProductName)}`,
@@ -75,14 +91,14 @@ function usePersonalizedHeroImage() {
         const data = await res.json();
         if (!cancelled) {
           setPersonalizedImageUrl(data?.imageUrl || null);
-          setLookupComplete(true);
+          setReady(true);
         }
       } catch (err) {
         console.error("Personalized hero lookup failed:", err);
-        // On any error, fall through to Personalize / base image gracefully
+        // On any error release the hold and show Personalize/base image
         if (!cancelled) {
           setPersonalizedImageUrl(null);
-          setLookupComplete(true);
+          setReady(true);
         }
       }
     }
@@ -91,11 +107,12 @@ function usePersonalizedHeroImage() {
     return () => {
       cancelled = true;
     };
-  }, [normalizedProductName]);
+  }, [profileLoaded, normalizedProductName]);
 
   return {
     personalizedImageUrl,
-    isResolving: !!normalizedProductName && !lookupComplete,
+    // Hold the image render until we have a definitive answer
+    ready,
     lyticsUser,
   };
 }
@@ -110,7 +127,7 @@ export default function Hero({ content, locale, withHeader, cslp }) {
   // Lytics hook — result is used only to override the hero image on index 0.
   // It has no effect on variant selection, layout, video, CSLP or any other
   // Personalize-controlled behaviour.
-  const { personalizedImageUrl, isResolving, lyticsUser } =
+  const { personalizedImageUrl, ready, lyticsUser } =
     usePersonalizedHeroImage();
 
   if (!content || content?.length === 0) return <div></div>;
@@ -197,8 +214,7 @@ export default function Hero({ content, locale, withHeader, cslp }) {
             // ── Image resolution ────────────────────────────────────────────
             //
             // Priority order:
-            //   1. Lytics DAM image  — only on index 0, only when the async
-            //                          lookup has returned a result
+            //   1. Lytics DAM image  — only on index 0, only once ready
             //   2. Personalize variant image  ─┐ both come from the `content`
             //   3. Base entry image            ─┘ prop Personalize already
             //                                     resolved before render
@@ -207,15 +223,14 @@ export default function Hero({ content, locale, withHeader, cslp }) {
             //
             const defaultImageUrl = hero?.image_options?.image?.url || null;
             const imageFile =
-              index === 0 && !isResolving && personalizedImageUrl
+              index === 0 && ready && personalizedImageUrl
                 ? personalizedImageUrl
                 : defaultImageUrl;
 
-            // Hold the image render on index 0 while the Lytics lookup is in
-            // flight. Because the Lytics profile loads almost instantly this
-            // hold is imperceptible but eliminates the visible swap from the
-            // base/Personalize image to the DAM image.
-            const shouldHoldImage = index === 0 && isResolving;
+            // On index 0, hold the entire image render until the Lytics
+            // lookup has completed — this eliminates the base image flash.
+            // On all other indices, render immediately as normal.
+            const shouldHoldImage = index === 0 && !ready;
 
             // ───────────────────────────────────────────────────────────────
 
@@ -238,8 +253,8 @@ export default function Hero({ content, locale, withHeader, cslp }) {
                 className={`bg-black relative isolate overflow-hidden flex ${containerHeightClass}`}
               >
                 {shouldHoldImage ? (
-                  // Matches the bg-black container so no visible change while
-                  // the DAM lookup completes
+                  // bg-black matches the container so no visible change while
+                  // waiting for the Lytics profile and DAM lookup to complete
                   <div className="absolute inset-0 -z-10 bg-black" />
                 ) : videoFile ? (
                   <video
