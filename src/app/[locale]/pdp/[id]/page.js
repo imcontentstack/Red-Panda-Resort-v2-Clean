@@ -1,12 +1,12 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
-import { ContentstackClient } from "@/lib/contentstack-client"
+import { useState, useEffect, useCallback, useRef } from "react";
+import { ContentstackClient } from "@/lib/contentstack-client";
 import Footer from "@/components/footer";
 import Header from "@/components/header";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { ArrowLeftIcon, ArrowRightIcon } from "@heroicons/react/20/solid";
 import { useRouter } from "next/navigation";
-import { LyticsTracking, useEntity, useJstag } from "@/context/lyticsTracking";
+import { useJstag } from "@/context/lyticsTracking";
 import PageHero from "@/components/pageHero";
 import TextSection from "@/components/textSection";
 import People from "@/components/people";
@@ -27,34 +27,28 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import RPCommerce from "@/lib/rpcommerce";
 import { pdpReferences } from "@/helpers/referencePaths";
-import { useDataContext, useCommerceFallback } from "@/context/data.context";
-import { jsonToHTML } from '@contentstack/utils';
+import { useDataContext } from "@/context/data.context";
+import { jsonToHTML } from "@contentstack/utils";
 
-
-export default function Page({  }) {
-  const params = useParams();
-  const initialData = useDataContext();
-  const commerceFallback = useCommerceFallback();
-  const jstag = useJstag();
-
+export default function Page() {
   const [entry, setEntry] = useState({});
-  const [product, setProduct] = useState(() => commerceFallback?.product ?? {});
-  const [isLoading, setIsLoading] = useState(() => {
-    const hasStack = Array.isArray(initialData) && initialData.length > 0;
-    const hasCommercePrefetch = Boolean(commerceFallback?.product);
-    return !(hasStack || hasCommercePrefetch);
-  });
+  const [product, setProduct] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
   const [imageIndex, setImageIndex] = useState(0);
+  const params = useParams();
   const router = useRouter();
-  const [variants, setVariants] = useState(
-    () => commerceFallback?.variants ?? commerceFallback?.product?.variants ?? []
-  );
+  const [variants, setVariants] = useState([]);
   const [variantsOpen, setVariantsOpen] = useState(false);
   const [variantImageIndices, setVariantImageIndices] = useState({});
   const [translations, setTranslations] = useState({});
   const [purchaseOpen, setPurchaseOpen] = useState(false);
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
   const [inputValue, setInputValue] = useState("");
+
+  const initialData = useDataContext();
+  const jstag = useJstag();
+
+  const hasTrackedViewRef = useRef(false);
 
   const handleGoBack = () => {
     router.back();
@@ -65,88 +59,144 @@ export default function Page({  }) {
     setInputValue(event.target.value);
   };
 
+  const getTrackingProductData = useCallback(() => {
+    const productName = entry?.product_name || product?.name || "";
+    const productSku = entry?.sku || product?.sku || "";
+    const productPrice = entry?.price || product?.price || "";
+    const productCurrency =
+      entry?.currency_symbol || product?.currency_symbol || "";
+    const productCategory =
+      entry?.product_category ||
+      entry?.category ||
+      product?.category ||
+      product?.product_category ||
+      product?.categories?.[0]?.name ||
+      product?.collections?.[0]?.name ||
+      "";
+    const productUrl =
+      typeof window !== "undefined" ? window.location.href : "";
+    const locale = params?.locale || "";
+
+    return {
+      product_name: productName,
+      product_sku: productSku,
+      product_price: productPrice,
+      product_currency: productCurrency,
+      product_category: productCategory,
+      product_url: productUrl,
+      locale,
+    };
+  }, [entry, product, params?.locale]);
+
+  const sendTrackingEvent = useCallback(
+    (eventName, extraPayload = {}) => {
+      const basePayload = getTrackingProductData();
+      const payload = {
+        ...basePayload,
+        ...extraPayload,
+      };
+
+      if (typeof jstag?.send === "function") {
+        jstag.send({
+          _e: eventName,
+          ...payload,
+        });
+      }
+
+      if (typeof window !== "undefined") {
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+          event: eventName,
+          ...payload,
+        });
+      }
+
+      console.log(`[tracking] ${eventName}`, payload);
+    },
+    [getTrackingProductData, jstag]
+  );
+
   function buyClick(price) {
-    jstag.send({
+    sendTrackingEvent("purchase", {
       shopify_total_spend: price,
-      _e: "purchase",
-      email: inputValue,
+      email: inputValue || "",
+      begin_checkout: true,
+      checkout_complete: true,
     });
-    jstag.call("resetPolling");
+
+    if (typeof jstag?.call === "function") {
+      jstag.call("resetPolling");
+    }
+
     setInputValue("");
     setPurchaseSuccess(true);
   }
 
-  const getProductsbyURL = useCallback(async (id) => {
-      try {
-        const products = await RPCommerce.getProductByUrl(id, params.locale);
-        if (products && products.length > 0) {
-          setVariants(products[0]?.variants);
-          setProduct(products[0]);
-        }
-      } catch (e) {
-        console.error("getProductByUrl failed:", e);
-      } finally {
+  const getProductsbyURL = useCallback(
+    async (id) => {
+      const products = await RPCommerce.getProductByUrl(id, params.locale);
+
+      if (products && products.length > 0) {
+        console.log("RP PRODUCT", products?.[0]);
+        setVariants(products?.[0]?.variants || []);
+        setProduct(products?.[0] || {});
+        setIsLoading(false);
+      } else {
         setIsLoading(false);
       }
-    }, [params.locale]);
+    },
+    [params.locale]
+  );
 
   const getContent = useCallback(async () => {
     if (params.id === "untitled" || !params.id) return;
-    const hasStackPrefetch = Array.isArray(initialData) && initialData.length > 0;
-    const hasCommercePrefetch = Boolean(commerceFallback?.product);
-    if (!hasStackPrefetch && !hasCommercePrefetch) {
-      setIsLoading(true);
-    }
-      const query = await ContentstackClient.getElementByUrlWithRefs(
-        "pdp",
-        "/pdp/" + params.id,
-        params.locale,
-        pdpReferences,
-        initialData
-      );
-      if (query && query.length > 0){
-        console.log(query)
-        const q0 = query[0];
 
-        jsonToHTML({
-          entry: q0,
-          paths: ['modular_blocks_top.category_banner.description', 'modular_blocks_bottom.category_banner.description']
-        });
-        
-        if(q0?.product && Array.isArray(q0?.product) && q0?.product?.length > 0) {
-          q0.product = q0.product[0];
-        }
-        if(q0?.variants && Array.isArray(q0?.variants) && q0?.variants?.length > 0) {
-          q0.variants = q0.variants[0];
-        }
-        setProduct(q0?.product?.items?.[0])
-        setEntry(q0);
-        setVariants(q0?.variants?.items);
-        setIsLoading(false);
-    } else if (commerceFallback?.product) {
-      setVariants(commerceFallback.variants ?? commerceFallback.product?.variants ?? []);
-      setProduct(commerceFallback.product);
-      setEntry({});
+    setIsLoading(true);
+
+    const query = await ContentstackClient.getElementByUrlWithRefs(
+      "pdp",
+      "/pdp/" + params.id,
+      params.locale,
+      pdpReferences,
+      initialData
+    );
+
+    if (query && query.length > 0) {
+      console.log("ENTRY", query?.[0]);
+      console.log("PRODUCT", query?.[0]?.product?.items?.[0]);
+
+      jsonToHTML({
+        entry: query[0],
+        paths: [
+          "modular_blocks_top.category_banner.description",
+          "modular_blocks_bottom.category_banner.description",
+        ],
+      });
+
+      setProduct(query?.[0]?.product?.items?.[0] || {});
+      setEntry(query?.[0] || {});
+      setVariants(query?.[0]?.variants?.items || []);
       setIsLoading(false);
     } else {
-      console.log("can't find contentstack entry, fetching product by url")
+      console.log("can't find contentstack entry, fetching product by url");
       await getProductsbyURL(params.id);
     }
-  }, [params.id, params.locale, initialData, commerceFallback, getProductsbyURL]);
+  }, [params.id, params.locale, initialData, getProductsbyURL]);
 
   const getTranslations = useCallback(async () => {
     try {
-      // Clear translations when locale changes
       setTranslations({});
-      // Fetch all translations entries and find the one with title "PDP Translations"
+
       const translationsEntries = await ContentstackClient.getElementByType(
         "translations",
         params.locale,
         null
       );
+
       const translationsEntry = translationsEntries?.find(
         (entry) => entry.title === "PDP Translations"
       );
+
       if (translationsEntry && translationsEntry.key_values) {
         const translationsMap = {};
         translationsEntry.key_values.forEach((item) => {
@@ -154,7 +204,9 @@ export default function Page({  }) {
         });
         setTranslations(translationsMap);
       } else {
-        console.warn(`No translations found for locale: ${params.locale} with title "PDP Translations"`);
+        console.warn(
+          `No translations found for locale: ${params.locale} with title "PDP Translations"`
+        );
       }
     } catch (error) {
       console.error("Error fetching translations:", error);
@@ -170,7 +222,26 @@ export default function Page({  }) {
     ContentstackClient.onEntryChange(getContent);
   }, [getTranslations, getContent]);
 
-  
+  useEffect(() => {
+    const productName = entry?.product_name || product?.name || "";
+    const productSku = entry?.sku || product?.sku || "";
+    const productPrice = entry?.price || product?.price || "";
+
+    if (!productName && !productSku && !productPrice) return;
+    if (hasTrackedViewRef.current) return;
+
+    sendTrackingEvent("view_item");
+    hasTrackedViewRef.current = true;
+  }, [
+    entry?.product_name,
+    entry?.sku,
+    entry?.price,
+    product?.name,
+    product?.sku,
+    product?.price,
+    sendTrackingEvent,
+  ]);
+
   if (isLoading || (!entry && !product)) {
     return (
       <div className="relative">
@@ -188,6 +259,7 @@ export default function Page({  }) {
   return (
     <div className="relative">
       <Header locale={params.locale} />
+
       <div className="max-w-8xl mx-auto px-8 pt-10 flex flex-col font-paragraph mb-12">
         <div className="w-full md:flex gap-16">
           <div className="md:w-1/2">
@@ -196,14 +268,16 @@ export default function Page({  }) {
               className="flex mb-4 items-center text-cyan-600 hover:text-[#D1A261]"
             >
               <ArrowLeftIcon className="h-5 w-5 mr-2" />
-              <p className="inline-block">{getTranslation("back_button", "Back to previous products")}</p>
+              <p className="inline-block">
+                {getTranslation("back_button", "Back to previous products")}
+              </p>
             </button>
+
             <div className="mt-4 flex gap-4">
-              
-              {/* Thumbnails column */}
               <div className="flex flex-col gap-3">
                 {((entry?.images?.length === 0 || !entry?.images) &&
-                  (product?.media && product?.media?.length > 0)) && (
+                  product?.media &&
+                  product?.media?.length > 0) && (
                   <div className="flex flex-col gap-3">
                     {product.media?.map((image, index) => (
                       <button
@@ -211,7 +285,9 @@ export default function Page({  }) {
                         type="button"
                         className={
                           "border p-1 cursor-pointer bg-white my-[6px] " +
-                          (imageIndex === index ? "border-black" : "border-gray-300")
+                          (imageIndex === index
+                            ? "border-black"
+                            : "border-gray-300")
                         }
                         onClick={() => setImageIndex(index)}
                       >
@@ -224,6 +300,7 @@ export default function Page({  }) {
                     ))}
                   </div>
                 )}
+
                 {entry?.images?.length > 0 && (
                   <div className="flex flex-col gap-3">
                     {entry?.images?.map((image, index) => (
@@ -232,7 +309,9 @@ export default function Page({  }) {
                         type="button"
                         className={
                           "border p-1 cursor-pointer bg-white my-[6px] " +
-                          (imageIndex === index ? "border-black" : "border-gray-300")
+                          (imageIndex === index
+                            ? "border-black"
+                            : "border-gray-300")
                         }
                         onClick={() => setImageIndex(index)}
                       >
@@ -248,78 +327,107 @@ export default function Page({  }) {
                 )}
               </div>
 
-              {/* Main image */}
               <div className="flex-1">
-                {(product?.media && product?.media?.length > 0) && (entry?.images?.length === 0 || !entry?.images) && (
-                  <img
-                    className="object-cover mx-auto h-[500px] w-full"
-                    src={product?.media?.[imageIndex]?.path}
-                    alt={product?.name || "Product image"}
-                  />
-                )}
-                {(!product?.media || !product.media?.[0]?.media?.[0]) && entry?.images?.[imageIndex]?.image?.url && (
-                  <img
-                    className="object-cover mx-auto h-[500px] w-full"
-                    src={entry?.images?.[imageIndex]?.image?.url}
-                    alt={entry?.product_name || "Product image"}
-                    {...entry?.images?.[imageIndex]?.$?.image}
-                  />
-                )}
+                {product?.media &&
+                  product?.media?.length > 0 &&
+                  (entry?.images?.length === 0 || !entry?.images) && (
+                    <img
+                      className="object-cover mx-auto h-[500px] w-full"
+                      src={product?.media[imageIndex].path}
+                      alt={product?.name || "Product image"}
+                    />
+                  )}
+
+                {(!product?.media || !product.media?.[0]?.media?.[0]) &&
+                  entry?.images?.[imageIndex]?.image?.url && (
+                    <img
+                      className="object-cover mx-auto h-[500px] w-full"
+                      src={entry.images[imageIndex].image.url}
+                      alt={entry?.product_name || "Product image"}
+                      {...entry.images[imageIndex].$?.image}
+                    />
+                  )}
               </div>
             </div>
           </div>
 
           <div className="xl:w-1/2 lg:w-4/6 md:w-3/4 mt-10">
-            <div className="text-[32px] leading-none mt-8" {...entry?.$?.product_name}>
+            <div
+              className="text-[32px] leading-none mt-8"
+              {...entry?.$?.product_name}
+            >
               {entry?.product_name ? entry?.product_name : product?.name}
             </div>
+
             {(product?.sku || entry?.sku) && (
               <div className="text-[20px] mt-4">
                 {entry?.sku ? entry?.sku : product?.sku}
               </div>
             )}
+
             {(product?.price || entry?.price) && (
               <div className="text-[32px] mt-4">
-                
-                {entry?.currency_symbol ? entry?.currency_symbol : product?.currency_symbol}{entry?.price ? entry?.price : product?.price}
+                {entry?.currency_symbol
+                  ? entry?.currency_symbol
+                  : product?.currency_symbol}
+                {entry?.price ? entry?.price : product?.price}
               </div>
             )}
+
             <div id="wrapper" className="relative w-3/4 mt-4">
               {variants && variants.length > 0 && (
                 <button
                   className="flex items-center gap-3 min-h-[75px] px-4 mt-4 md:w-full lg:w-3/4 xl:w-4/6 relative rounded-[60px] button tracking-widest uppercase bg-white font-bold text-cyan-600 shadow-sm ring-2 ring-inset ring-cyan-600 hover:bg-cyan-600 hover:text-white"
-                  onClick={() => setVariantsOpen(true)}
+                  onClick={() => {
+                    sendTrackingEvent("view_variants", {
+                      variant_count: variants.length,
+                    });
+                    setVariantsOpen(true);
+                  }}
                 >
-                  <img className="w-[70px] h-[70px] rounded-[50%] flex-shrink-0" src={variants?.[0]?.media?.[0]?.path} alt={variants?.[0]?.name || "Product variant"}></img>
-                  <div className="flex-1 text-center whitespace-normal break-words">{getTranslation("variations_button", "SEE ALL VARIATIONS")}</div>
+                  <img
+                    className="w-[70px] h-[70px] rounded-[50%] flex-shrink-0"
+                    src={variants?.[0]?.media?.[0]?.path}
+                    alt={variants?.[0]?.name || "Product variant"}
+                  />
+                  <div className="flex-1 text-center whitespace-normal break-words">
+                    {getTranslation("variations_button", "SEE ALL VARIATIONS")}
+                  </div>
                 </button>
               )}
+
               <button
                 className="mt-4 rounded-[60px] md:w-full lg:w-3/4 xl:w-4/6 text-nowrap relative button px-8 py-4 text-md tracking-widest uppercase bg-white font-bold text-cyan-600 shadow-sm ring-2 ring-inset ring-cyan-600 hover:bg-cyan-600 hover:text-white"
                 onClick={() => {
-                  const productName = entry?.product_name || product?.name || "";
-                  if (typeof jstag?.send === "function") {
-                    jstag.send({ product_name: productName });
-                  }
+                  sendTrackingEvent("add_to_cart", {
+                    quantity: 1,
+                    begin_checkout: false,
+                    checkout_complete: false,
+                  });
+
+                  sendTrackingEvent("begin_checkout", {
+                    quantity: 1,
+                    begin_checkout: true,
+                    checkout_complete: false,
+                  });
+
                   setPurchaseOpen(true);
                 }}
               >
-               {getTranslation("cart_button", "Add to Cart")}
+                {getTranslation("cart_button", "Add to Cart")}
               </button>
             </div>
-
-            
           </div>
         </div>
+
         <div className="text-[32px] leading-none normal-case mt-8">
           {getTranslation("description_label", "Description")}
         </div>
+
         <div
           className="mt-4 font-extralight whitespace-pre-line [&_p]:mt-3 [&_ul]:list-disc  [&_ul]:pl-10 text-sm tracking-wide"
           dangerouslySetInnerHTML={{
-            __html: entry?.description
-              ? entry?.description
-              : product?.description,
+            __html: entry?.description ? entry?.description : product?.description,
           }}
           {...entry?.$?.description}
         ></div>
@@ -354,24 +462,24 @@ export default function Page({  }) {
             {block.hasOwnProperty("text_block") && (
               <TextSection key={index} content={block.text_block} />
             )}
-            {block.hasOwnProperty("cards") &&
+            {block.hasOwnProperty("cards") && (
               <Cards key={index} content={block.cards} />
-            }
-            {block.hasOwnProperty("review") &&
+            )}
+            {block.hasOwnProperty("review") && (
               <Reviews key={index} content={block.review} />
-            }
-            {block.hasOwnProperty("product_banner") &&
+            )}
+            {block.hasOwnProperty("product_banner") && (
               <ProductFeature key={index} content={block.product_banner} />
-            }
-            {block.hasOwnProperty("category_banner") &&
+            )}
+            {block.hasOwnProperty("category_banner") && (
               <CategoryBanner key={index} content={block.category_banner} />
-            }
-            {block.hasOwnProperty("lead_capture") &&
+            )}
+            {block.hasOwnProperty("lead_capture") && (
               <LeadCapture key={index} content={block.lead_capture} />
-            }
-            {block.hasOwnProperty("agent") &&
+            )}
+            {block.hasOwnProperty("agent") && (
               <Agent key={index} agentData={block.agent} />
-            }
+            )}
             {block.hasOwnProperty("hero_banner") && (
               <Hero
                 key={index}
@@ -403,19 +511,22 @@ export default function Page({  }) {
               <FormBuilder key={index} content={block.form_builder} />
             )}
             {block.hasOwnProperty("recommendations_banner") && (
-              <RecommendationsBanner key={index} content={block.recommendations_banner} />
+              <RecommendationsBanner
+                key={index}
+                content={block.recommendations_banner}
+              />
             )}
           </div>
         ))}
       </div>
 
-      {/* Variants Slideout */}
       {variantsOpen && (
         <div
           className="fixed top-0 h-full bg-black opacity-50 w-full z-40 transition-opacity duration-300"
           onClick={() => setVariantsOpen(false)}
         ></div>
       )}
+
       <div
         className={`fixed w-[450px] z-50 h-full top-0 right-0 border-l bg-white shadow-lg transition-transform duration-300 ease-in-out ${
           variantsOpen ? "translate-x-0" : "translate-x-full"
@@ -429,9 +540,11 @@ export default function Page({  }) {
               onClick={() => setVariantsOpen(false)}
             />
           </div>
+
           <div className="flex-1 overflow-y-auto p-4">
             <div className="grid grid-cols-1 gap-4">
-              {variants && variants?.length > 0 && (
+              {variants &&
+                variants?.length > 0 &&
                 variants.map((variant, index) => {
                   const variantImages = variant.media || [];
                   const currentImageIndex = variantImageIndices[index] || 0;
@@ -439,22 +552,31 @@ export default function Page({  }) {
 
                   const handlePreviousImage = (e) => {
                     e.stopPropagation();
-                    setVariantImageIndices(prev => ({
+                    setVariantImageIndices((prev) => ({
                       ...prev,
-                      [index]: currentImageIndex > 0 ? currentImageIndex - 1 : variantImages.length - 1
+                      [index]:
+                        currentImageIndex > 0
+                          ? currentImageIndex - 1
+                          : variantImages.length - 1,
                     }));
                   };
+
                   const handleNextImage = (e) => {
                     e.stopPropagation();
-                    setVariantImageIndices(prev => ({
+                    setVariantImageIndices((prev) => ({
                       ...prev,
-                      [index]: currentImageIndex < variantImages.length - 1 ? currentImageIndex + 1 : 0
+                      [index]:
+                        currentImageIndex < variantImages.length - 1
+                          ? currentImageIndex + 1
+                          : 0,
                     }));
                   };
 
                   return (
-                    <div key={index}
-                      className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer">
+                    <div
+                      key={index}
+                      className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                    >
                       {variantImages.length > 0 && (
                         <div className="relative mb-3">
                           <img
@@ -484,42 +606,62 @@ export default function Page({  }) {
                           )}
                         </div>
                       )}
-                      <Link href={variant?.url ? variant?.url : "#"}>
-                      <div className="text-lg font-semibold mb-2">
-                        {variant.name}
-                      </div>
-                      {variant?.price && (
-                        <p className="text-xl font-bold text-cyan-600">
-                          {variant.price}
-                        </p>
-                      )}
-                      {product?.price && (
-                        <p className="text-xl font-bold text-cyan-600">
-                          {product?.currency_symbol}{product?.price}
-                        </p>
-                      )}
-                      {variant?.description && (
-                        <p className="text-sm text-gray-600 mt-2 line-clamp-2" dangerouslySetInnerHTML={{
-                          __html: variant?.description,
-                        }}>
-                        </p>
-                      )}
+
+                      <Link
+                        href={variant?.url ? variant?.url : "#"}
+                        onClick={() => {
+                          sendTrackingEvent("select_item", {
+                            selected_variant_name: variant?.name || "",
+                            selected_variant_sku: variant?.sku || "",
+                            selected_variant_price: variant?.price || "",
+                            selected_variant_url: variant?.url || "",
+                          });
+                        }}
+                      >
+                        <div className="text-lg font-semibold mb-2">
+                          {variant.name}
+                        </div>
+
+                        {variant?.price && (
+                          <p className="text-xl font-bold text-cyan-600">
+                            {variant.price}
+                          </p>
+                        )}
+
+                        {product?.price && (
+                          <p className="text-xl font-bold text-cyan-600">
+                            {product?.currency_symbol}
+                            {product?.price}
+                          </p>
+                        )}
+
+                        {variant?.description && (
+                          <p
+                            className="text-sm text-gray-600 mt-2 line-clamp-2"
+                            dangerouslySetInnerHTML={{
+                              __html: variant?.description,
+                            }}
+                          ></p>
+                        )}
                       </Link>
                     </div>
                   );
-              }))}
+                })}
             </div>
           </div>
         </div>
       </div>
 
       <div
-        className={`fixed top-0 h-full bg-black opacity-50 w-full z-40 hidden ${purchaseOpen ? "sm:block" : ""
-          }`}
+        className={`fixed top-0 h-full bg-black opacity-50 w-full z-40 hidden ${
+          purchaseOpen ? "sm:block" : ""
+        }`}
       ></div>
+
       <div
-        className={`fixed w-full sm:w-[350px] z-50 h-full top-0 right-0 border-l bg-white shadow-lg p-4 transition-all duration-500 ${purchaseOpen ? "translate-x-0" : "translate-x-full"
-          }`}
+        className={`fixed w-full sm:w-[350px] z-50 h-full top-0 right-0 border-l bg-white shadow-lg p-4 transition-all duration-500 ${
+          purchaseOpen ? "translate-x-0" : "translate-x-full"
+        }`}
       >
         <XMarkIcon
           className="size-5 ml-auto cursor-pointer"
@@ -532,19 +674,32 @@ export default function Page({  }) {
         {purchaseSuccess ? (
           <div className="flex flex-col items-center justify-center h-[calc(100%-40px)]">
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-100 mb-6">
-              <svg className="h-10 w-10 text-green-600" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              <svg
+                className="h-10 w-10 text-green-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth="2.5"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M4.5 12.75l6 6 9-13.5"
+                />
               </svg>
             </div>
+
             <h3 className="text-xl font-semibold text-gray-900 text-center">
               {getTranslation("purchase_success_title", "Purchase Complete!")}
             </h3>
+
             <p className="mt-3 text-sm text-gray-600 text-center px-4">
               {getTranslation(
                 "purchase_success_message",
                 "Thank you for your order."
               )}
             </p>
+
             <button
               onClick={() => {
                 setPurchaseOpen(false);
@@ -568,11 +723,20 @@ export default function Page({  }) {
                 <p>Price:</p>
                 <p className="mt-3">Total:</p>
               </div>
-              {product?.price && (
+
+              {(product?.price || entry?.price) && (
                 <div className="w-7/12">
-                  <p>${entry?.price ? entry?.price : product?.price}</p>
+                  <p>
+                    {entry?.currency_symbol
+                      ? entry?.currency_symbol
+                      : product?.currency_symbol}
+                    {entry?.price ? entry?.price : product?.price}
+                  </p>
                   <p className="mt-3">
-                    ${entry?.price ? entry?.price : product?.price}
+                    {entry?.currency_symbol
+                      ? entry?.currency_symbol
+                      : product?.currency_symbol}
+                    {entry?.price ? entry?.price : product?.price}
                   </p>
                 </div>
               )}
@@ -588,7 +752,7 @@ export default function Page({  }) {
             </form>
 
             <div className="flex mt-3">
-              <input type="checkbox" checked />
+              <input type="checkbox" checked readOnly />
               <label className="ml-2">Use card on file</label>
             </div>
 
@@ -602,7 +766,9 @@ export default function Page({  }) {
             </div>
 
             <button
-              onClick={() => buyClick(entry?.price ? entry?.price : product?.price)}
+              onClick={() =>
+                buyClick(entry?.price ? entry?.price : product?.price)
+              }
               className="bg-black text-white rounded-lg py-4 w-full mt-10 font-semibold tracking-wide border-black border-2 hover:bg-white hover:text-black"
             >
               Complete Purchase
