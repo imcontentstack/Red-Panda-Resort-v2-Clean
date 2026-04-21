@@ -31,14 +31,15 @@ function normalizeValue(value) {
  * Looks up a personalised hero image from the DAM based on the last product
  * the user interacted with in their Lytics profile.
  *
- * Starts in a holding state (ready: false) so the hero never renders the
- * base/Personalize image before we know whether a DAM image exists.
- * Because the Lytics profile loads almost instantly, this hold is
- * imperceptible to users.
+ * Starts in a holding state (ready: false) so the entire first hero is
+ * withheld from rendering until we know definitively which image to show.
+ * Because the Lytics profile loads almost instantly this hold is
+ * imperceptible, but eliminates any visible flash of the base/Personalize
+ * image or text before the personalised version appears.
  *
  * Returns:
  *   personalizedImageUrl — the DAM image URL, or null if none found
- *   ready                — false until we have a definitive answer (hold render)
+ *   ready                — false until we have a definitive answer
  *   lyticsUser           — raw Lytics user object for any other profile fields
  */
 function usePersonalizedHeroImage() {
@@ -60,8 +61,8 @@ function usePersonalizedHeroImage() {
 
   const [personalizedImageUrl, setPersonalizedImageUrl] = useState(null);
 
-  // Start not ready — hold the render until we have a definitive answer.
-  // This prevents the base image flashing before the DAM image is known.
+  // Start not ready — hold the entire first hero render until we have a
+  // definitive answer. This prevents any flash of base content.
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -72,7 +73,6 @@ function usePersonalizedHeroImage() {
 
     async function resolve() {
       // Profile loaded but no product in it — release hold immediately
-      // and show Personalize/base image
       if (!normalizedProductName) {
         if (!cancelled) {
           setPersonalizedImageUrl(null);
@@ -81,7 +81,7 @@ function usePersonalizedHeroImage() {
         return;
       }
 
-      // Product found in profile — fetch the DAM image before releasing hold
+      // Product found — fetch the DAM image before releasing the hold
       try {
         const res = await fetch(
           `/api/personalized-hero?product_name=${encodeURIComponent(normalizedProductName)}`,
@@ -95,7 +95,7 @@ function usePersonalizedHeroImage() {
         }
       } catch (err) {
         console.error("Personalized hero lookup failed:", err);
-        // On any error release the hold and show Personalize/base image
+        // On any error release the hold and show Personalize/base content
         if (!cancelled) {
           setPersonalizedImageUrl(null);
           setReady(true);
@@ -111,7 +111,6 @@ function usePersonalizedHeroImage() {
 
   return {
     personalizedImageUrl,
-    // Hold the image render until we have a definitive answer
     ready,
     lyticsUser,
   };
@@ -227,11 +226,6 @@ export default function Hero({ content, locale, withHeader, cslp }) {
                 ? personalizedImageUrl
                 : defaultImageUrl;
 
-            // On index 0, hold the entire image render until the Lytics
-            // lookup has completed — this eliminates the base image flash.
-            // On all other indices, render immediately as normal.
-            const shouldHoldImage = index === 0 && !ready;
-
             // ───────────────────────────────────────────────────────────────
 
             const imageHeight = hero?.image_options?.image_height || "h-auto";
@@ -247,16 +241,26 @@ export default function Hero({ content, locale, withHeader, cslp }) {
               ? "h-screen w-full"
               : aspectRatioClass;
 
+            // ── Hold the entire first hero until the Lytics lookup is done ──
+            // This prevents any flash of base image or text before the
+            // personalised content is ready. The container is kept at the
+            // correct dimensions so the page layout does not shift.
+            if (index === 0 && !ready) {
+              return (
+                <div
+                  key={index}
+                  className={`bg-black relative isolate overflow-hidden flex ${containerHeightClass}`}
+                />
+              );
+            }
+            // ───────────────────────────────────────────────────────────────
+
             return (
               <div
                 key={index}
                 className={`bg-black relative isolate overflow-hidden flex ${containerHeightClass}`}
               >
-                {shouldHoldImage ? (
-                  // bg-black matches the container so no visible change while
-                  // waiting for the Lytics profile and DAM lookup to complete
-                  <div className="absolute inset-0 -z-10 bg-black" />
-                ) : videoFile ? (
+                {videoFile ? (
                   <video
                     className="absolute inset-0 -z-10 min-h-full min-w-full h-full w-full object-cover"
                     style={{ opacity: mediaOpacity }}
