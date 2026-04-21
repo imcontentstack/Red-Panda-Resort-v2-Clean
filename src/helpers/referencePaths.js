@@ -1,0 +1,76 @@
+export const homepageReferences = [
+    'modular_blocks.review.reference',
+    'modular_blocks.image_grid.image.page',
+    'hero.hero_banner',
+    'modal',
+    'modal.button_reference',
+    'hero.page',
+    'modular_blocks.review.testimonials',
+    'modular_blocks.review.testimonials.reviews.review',
+    'modular_blocks.product_banner.plp',
+    'modular_blocks.cards.card.page',
+    'modular_blocks.text_and_image.page',
+    'modular_blocks.article_banner.articles',
+    'modular_blocks.category_banner.plp',
+]
+
+export const pagesReferences = [
+    'modal',
+    'modal.button_reference',
+    'modular_blocks.hero.hero',
+    'modular_blocks.hero_banner.hero',
+    'modular_blocks.articles.articles',
+    'modular_blocks.review.reference',
+    'modular_blocks.image_grid.image.page',
+    'modular_blocks.review.testimonials',
+    'modular_blocks.review.testimonials.reviews.review',
+    'modular_blocks.product_banner.plp',
+    'modular_blocks.category_banner.plp',
+    'modular_blocks.cards.card.page',
+    'modular_blocks.text_and_image.page',
+    'modular_blocks.article_banner.articles',
+]
+
+export const plpReferences = [
+    'modular_blocks_top.hero.hero',
+    'modular_blocks_top.hero_banner.hero',
+    'modular_blocks_top.articles.articles',
+    'modular_blocks_top.review.reference',
+    'modular_blocks_top.image_grid.image.page',
+    'modular_blocks_top.review.testimonials',
+    'modular_blocks_top.review.testimonials.reviews.review',
+    'modular_blocks_top.product_banner.plp',
+    'modular_blocks_top.cards.card.page',
+    'modular_blocks_top.text_and_image.page',
+    'modular_blocks_top.resort_package.resort_package',
+    'modular_blocks_top.resort_package.resort_package.products',
+    'modular_blocks_top.category_banner.plp',
+    'entry_products',
+
+    'modular_blocks_bottom.hero.hero',
+    'modular_blocks_bottom.hero_banner.hero',
+    'modular_blocks_bottom.articles.articles',
+    'modular_blocks_bottom.review.reference',
+    'modular_blocks_bottom.image_grid.image.page',
+    'modular_blocks_bottom.review.testimonials',
+    'modular_blocks_bottom.review.testimonials.reviews.review',
+    'modular_blocks_bottom.product_banner.plp',
+    'modular_blocks_bottom.cards.card.page',
+    'modular_blocks_bottom.text_and_image.page',
+    'modular_blocks_bottom.resort_package.resort_package',
+    'modular_blocks_bottom.resort_package.resort_package.products',
+    'modular_blocks_bottom.category_banner.plp'
+]
+
+export const pdpReferences = [
+    'modular_blocks.hero.hero',
+    'modular_blocks.hero_banner.hero',
+    'modular_blocks.articles.articles',
+    'modular_blocks.review.reference',
+    'modular_blocks.image_grid.image.page',
+    'modular_blocks.review.testimonials',
+    'modular_blocks.review.testimonials.reviews.review',
+    'modular_blocks.product_banner.plp',
+    'modular_blocks.cards.card.page',
+    'modular_blocks.text_and_image.page'
+]

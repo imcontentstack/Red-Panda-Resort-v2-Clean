@@ -1,0 +1,12 @@
+fileignoreconfig:
+- filename: src/app/[locale]/experiences/page.js
+  checksum: 5f1659c9db7b2cf629cc6478df8f402cb4010e63d47e005b38837b57f307abca
+- filename: src/app/[locale]/page/[title]/page.js
+  checksum: 9003e617f29aeea7c8052e3ede47ef44751499bf17e075c29d2b8903b2827448
+- filename: src/components/header.js
+  checksum: 7f198e15df33d8843b930b2becd19d040fa9c3a53b3bf3bc69b6d78043b2f952
+- filename: src/app/[locale]/pages/[title]/page.js
+  checksum: 35271a0a8946f54672d8ed73351701aeb02447f4c26dc783f984fced4be0ecdc
+- filename: src/components/landingPageGrid.js
+  checksum: 6097b1c59054fd7039cfc379fd4580edb40cde5d4643b0d27538f6b044935257
+version: "1.0"

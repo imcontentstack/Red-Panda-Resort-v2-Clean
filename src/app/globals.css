@@ -1,0 +1,160 @@
+@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@theme {
+  /* FONT FAMILIES */
+  --font-poppins: var(--font-poppins);
+  --font-cinzel: var(--font-cinzel);
+  --font-montserrat: var(--font-monteserrat);
+  --font-roboto: var(--font-roboto);
+  --font-playfair: var(--font-playfair);
+  --font-raleway: var(--font-raleway);
+  --font-opensans: var(--font-opensans);
+  --font-spectral: var(--font-spectral);
+  --font-rokkitt: var(--font-rokkitt);
+  --font-cormorant: var(--font-cormorant);
+  --font-lexend: var(--font-lexend);
+
+  /* Background gradients */
+  --bg-gradient-radial: radial-gradient(var(--tw-gradient-stops));
+  --bg-gradient-conic: conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops));
+
+  /* Animations */
+  --animate-fadeIn: fadeIn 1s ease-in-out;
+  --animate-infinite-scroll: infinite-scroll 60s linear infinite;
+
+  /* Keyframes */
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  @keyframes infinite-scroll {
+    0%   { transform: translateX(0%); }
+    100% { transform: translateX(-100%); }
+  }
+
+  @keyframes bounce {
+    0%, 100% {
+      transform: translateY(-50%);
+      animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+    }
+    50% {
+      transform: none;
+      animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+    }
+  }
+}
+
+@theme{
+    --container-8xl: 1440px;
+}
+
+:root:has(.no-doc-scroll){
+    overflow:hidden;
+    margin-right: 14px;
+}
+
+.temp > p{
+    margin-bottom: 25px;
+}
+
+.two-cols {
+    -webkit-columns: 40px 2;
+    /* Chrome, Safari, Opera */
+    -moz-columns: 60px 2;
+    /* Firefox */
+    columns: 60px 2;
+}
+
+h1, h2, h3, h4, h5 {
+    text-transform: uppercase;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    line-height: 1.5;
+}
+
+.save-the-turtles * {
+    font-family: var(--font-lexend);
+}
+
+h1 {
+    font-size: 3rem;
+}
+
+h2 {
+   font-size: 2.25rem;
+}
+
+h3 {
+    font-size: 2rem;
+}
+
+p, label{
+    font-size: 1.125rem;
+    font-weight: 00;
+    letter-spacing: .05rem;
+}
+
+strong {
+    font-weight: 600;
+}
+
+.json-rte > p {
+    font-weight: 300;
+    margin-bottom: 2rem;
+}
+.json-rte > :is(li, ol, ul) {
+    margin-bottom: 2rem;
+    margin-left: 2rem;
+    font-size: 1.125rem;
+    font-family: var(--font-poppins);
+    font-weight: 300;
+    letter-spacing: .05rem;
+}
+
+.json-rte > ol {
+    list-style-position:inside;
+    list-style-type: decimal;
+}
+
+.json-rte > ul {
+    list-style-position:inside;
+    list-style-type: disc;
+}
+
+ .article > p {
+    font-weight: 300;
+    margin-bottom: 2rem;
+    font-size: 1rem;
+    letter-spacing: .02rem;
+ }
+
+ .article > :is(h1, h2, h3, h4, h5) {
+    font-weight: 300;
+    text-transform: none;
+ }
+
+ .article > ol{
+    list-style-position:inside;
+    list-style-type: decimal;
+ }
+
+ .article > ul {
+    list-style-position:inside;
+    list-style-type: disc;
+ }
+
+ .article > :is(li, ol, ul) {
+    font-size: 1rem;
+    letter-spacing: .02rem;
+ }
+
+ .plp-description > p{
+    font-weight: 300;
+    margin-bottom: 2rem;
+    font-size: 1rem;
+    letter-spacing: .02rem;
+}
