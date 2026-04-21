@@ -95,9 +95,6 @@ function usePersonalizedHeroImage() {
 
   return {
     personalizedImageUrl,
-    // Only true while a fetch is actively in flight for a known product.
-    // This is intentionally NOT used to blank the hero — the Personalize
-    // variant image shows immediately and the DAM image swaps in if found.
     isResolving: !!normalizedProductName && !lookupComplete,
     lyticsUser,
   };
@@ -213,6 +210,13 @@ export default function Hero({ content, locale, withHeader, cslp }) {
               index === 0 && !isResolving && personalizedImageUrl
                 ? personalizedImageUrl
                 : defaultImageUrl;
+
+            // Hold the image render on index 0 while the Lytics lookup is in
+            // flight. Because the Lytics profile loads almost instantly this
+            // hold is imperceptible but eliminates the visible swap from the
+            // base/Personalize image to the DAM image.
+            const shouldHoldImage = index === 0 && isResolving;
+
             // ───────────────────────────────────────────────────────────────
 
             const imageHeight = hero?.image_options?.image_height || "h-auto";
@@ -233,7 +237,11 @@ export default function Hero({ content, locale, withHeader, cslp }) {
                 key={index}
                 className={`bg-black relative isolate overflow-hidden flex ${containerHeightClass}`}
               >
-                {videoFile ? (
+                {shouldHoldImage ? (
+                  // Matches the bg-black container so no visible change while
+                  // the DAM lookup completes
+                  <div className="absolute inset-0 -z-10 bg-black" />
+                ) : videoFile ? (
                   <video
                     className="absolute inset-0 -z-10 min-h-full min-w-full h-full w-full object-cover"
                     style={{ opacity: mediaOpacity }}
