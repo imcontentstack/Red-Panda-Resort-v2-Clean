@@ -163,7 +163,36 @@ export function LyticsTracking() {
     jstag.pageView();
   }, [pathname, jstag]);
 
-  // ── Fix 2: invalidate the Personalize manifest on audience change ─────────
+  // ── Fix 2: reinitialize Pathfora on every route change ───────────────────
+  //
+  // Pathfora evaluates its display rules (URL matching, audience targeting,
+  // frequency caps) once on page load. Because Next.js handles navigation
+  // client-side without a full page reload, Pathfora never re-evaluates and
+  // widgets don't appear when navigating to a page that should show one.
+  //
+  // pathfora.reinitialize() tells Pathfora to re-run all display rule checks
+  // against the current URL and user state, so widgets fire correctly on
+  // SPA route changes without needing a hard reload.
+  //
+  useEffect(() => {
+    if (!jstag) return;
+    if (typeof window === "undefined") return;
+
+    // Pathfora is loaded by the Lytics tag — wait for it to be available
+    // before attempting to reinitialize
+    const attemptReinitialize = () => {
+      if (window.pathfora?.reinitialize) {
+        window.pathfora.reinitialize();
+      }
+    };
+
+    // Small delay to allow Pathfora to finish any in-flight operations
+    // from the previous route before reinitializing for the new one
+    const timer = setTimeout(attemptReinitialize, 300);
+    return () => clearTimeout(timer);
+  }, [pathname]);
+
+  // ── Fix 3: invalidate the Personalize manifest on audience change ─────────
   //
   // When a user qualifies for a new Lytics audience (e.g. "Abandoned Basket")
   // the cs-personalize-manifest cookie was going stale — the Personalize edge
@@ -177,7 +206,10 @@ export function LyticsTracking() {
     if (!jstag) return;
 
     const off = jstag.on("audience.change", (_, audienceData) => {
-      console.log("Lytics audience changed — invalidating Personalize manifest", audienceData);
+      console.log(
+        "Lytics audience changed — invalidating Personalize manifest",
+        audienceData
+      );
       invalidatePersonalizeManifest();
     });
 
