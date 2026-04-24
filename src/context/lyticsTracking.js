@@ -170,47 +170,45 @@ export function LyticsTracking() {
   // client-side without a full page reload, Pathfora never re-evaluates and
   // widgets don't appear when navigating to a page that should show one.
   //
-  // pathfora.reinitialize() tells Pathfora to re-run all display rule checks
-  // against the current URL and user state, so widgets fire correctly on
-  // SPA route changes without needing a hard reload.
+  // pathfora.clearAll() + triggerWidgets() tells Pathfora to re-run all
+  // display rule checks against the current URL and user state.
   //
   useEffect(() => {
     if (!jstag) return;
     if (typeof window === "undefined") return;
 
-    // Pathfora is loaded by the Lytics tag — wait for it to be available
-    // before attempting to reinitialize
     const attemptReinitialize = () => {
-      if (window.pathfora?.reinitialize) {
-        window.pathfora.reinitialize();
+      if (window.pathfora?.clearAll && window.pathfora?.triggerWidgets) {
+        window.pathfora.clearAll();
+        window.pathfora.triggerWidgets();
       }
     };
 
-    // Small delay to allow Pathfora to finish any in-flight operations
-    // from the previous route before reinitializing for the new one
     const timer = setTimeout(attemptReinitialize, 300);
     return () => clearTimeout(timer);
   }, [pathname]);
 
-  // ── Fix 3: invalidate the Personalize manifest on audience change ─────────
+  // ── Fix 3: reload on audience change ─────────────────────────────────────
   //
-  // When a user qualifies for a new Lytics audience (e.g. "Abandoned Basket")
-  // the cs-personalize-manifest cookie was going stale — the Personalize edge
-  // SDK wasn't re-evaluating, so the correct variant was never served.
+  // When Lytics registers a user into a new audience, we:
+  //   1. Invalidate the stale cs-personalize-manifest cookie
+  //   2. Reload the page so the middleware re-evaluates with the updated
+  //      audience state and serves the correct Personalize variant immediately
   //
-  // We listen for the Lytics audience.change event and immediately delete the
-  // manifest cookie. On the next navigation or reload the edge middleware will
-  // re-run, pick up the new audience membership, and set the correct variant.
+  // We reload on any audience change rather than guarding for specific
+  // audiences — personalisation should always reflect the user's current
+  // state dynamically.
   //
   useEffect(() => {
     if (!jstag) return;
 
     const off = jstag.on("audience.change", (_, audienceData) => {
       console.log(
-        "Lytics audience changed — invalidating Personalize manifest",
+        "Lytics audience changed — invalidating Personalize manifest and reloading",
         audienceData
       );
       invalidatePersonalizeManifest();
+      window.location.reload();
     });
 
     return () => {
