@@ -186,12 +186,14 @@ export const useTopUnpurchasedProduct = () => {
         return;
       }
 
-      jstag.call("profile", function (profile) {
-        console.log("profile callback fired, profile:", profile);
-        if (!profile || !profile.data) return;
+      // Use entity.loaded event — safer than jstag.call("profile")
+      // which can throw during the async queue replay phase
+      jstag.on("entity.loaded", function (_, entity) {
+        console.log("entity loaded in useTopUnpurchasedProduct:", entity);
+        if (!entity || !entity.data) return;
 
-        const viewCounts = profile.data.product_view_counts || {};
-        const purchased = profile.data.purchased_skus || [];
+        const viewCounts = entity.data.product_view_counts || {};
+        const purchased = entity.data.purchased_skus || [];
 
         const topProduct =
           Object.keys(viewCounts)
