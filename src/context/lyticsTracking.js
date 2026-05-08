@@ -160,13 +160,15 @@ export const useTopUnpurchasedProduct = () => {
   const jstag = useJstag();
 
   useEffect(() => {
+    console.log("useTopUnpurchasedProduct fired, jstag:", jstag); // ← debug
     if (!jstag) return;
 
     jstag.call("profile", function (profile) {
+      console.log("profile callback fired, profile:", profile); // ← debug
       if (!profile || !profile.data) return;
 
       const viewCounts = profile.data.product_view_counts || {};
-      const purchased = profile.data.purchased_product_ids || [];
+      const purchased = profile.data.purchased_skus || [];
 
       const topProduct =
         Object.keys(viewCounts)
