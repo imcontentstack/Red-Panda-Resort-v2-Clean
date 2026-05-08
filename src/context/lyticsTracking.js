@@ -127,19 +127,21 @@ export const useEntity = () => {
   const [entity, setEntity] = useState(null);
 
   useEffect(() => {
+    if (!jstag) return; // ← guard added
+
     const off = jstag.on("entity.loaded", (_, entity) => {
       setEntity(entity);
     });
     return () => {
       off();
     };
-  }, []);
+  }, [jstag]); // ← jstag added to dependency array
 
   return entity;
 };
 
 // ---------------------------------------------------------------------------
-// useTopUnpurchasedProduct  ← NEW
+// useTopUnpurchasedProduct
 // ---------------------------------------------------------------------------
 //
 // Reads the current Lytics profile on homepage load, finds the product with
@@ -148,43 +150,53 @@ export const useEntity = () => {
 //
 // Depends on two profile fields built by Conductor:
 //   - product_view_counts     map[string]int  (Pipeline 1)
-//   - purchased_product_ids   []string        (from purchase events)
+//   - purchased_skus          []string        (from purchase events)
 //
 // Writes to:
 //   - top_unpurchased_product  string  (Pipeline 2, mergeop: latest)
 //
-// ⚠️  If your purchase events write to a different field name, update
-//     `purchased_product_ids` below to match.
-//
 export const useTopUnpurchasedProduct = () => {
-  const jstag = useJstag();
-
   useEffect(() => {
-    console.log("useTopUnpurchasedProduct fired, jstag:", jstag); // ← debug
-    if (!jstag) return;
+    let attempts = 0;
+    const maxAttempts = 20;
 
-    jstag.call("profile", function (profile) {
-      console.log("profile callback fired, profile:", profile); // ← debug
-      if (!profile || !profile.data) return;
+    const run = () => {
+      attempts++;
+      console.log(`useTopUnpurchasedProduct attempt ${attempts}, jstag:`, typeof jstag !== "undefined" ? "ready" : "undefined");
 
-      const viewCounts = profile.data.product_view_counts || {};
-      const purchased = profile.data.purchased_skus || [];
-
-      const topProduct =
-        Object.keys(viewCounts)
-          .filter((productId) => !purchased.includes(productId))
-          .sort((a, b) => viewCounts[b] - viewCounts[a])[0] || null;
-
-      if (topProduct) {
-        console.log("Lytics: top unpurchased product →", topProduct);
-        jstag.send({ top_unpurchased_product: topProduct });
-      } else {
-        console.log(
-          "Lytics: no unpurchased viewed products on profile — skipping send"
-        );
+      if (typeof jstag === "undefined") {
+        if (attempts < maxAttempts) {
+          setTimeout(run, 500);
+        } else {
+          console.log("useTopUnpurchasedProduct: jstag never became available");
+        }
+        return;
       }
-    });
-  }, [jstag]);
+
+      jstag.call("profile", function (profile) {
+        console.log("profile callback fired, profile:", profile);
+        if (!profile || !profile.data) return;
+
+        const viewCounts = profile.data.product_view_counts || {};
+        const purchased = profile.data.purchased_skus || [];
+
+        const topProduct =
+          Object.keys(viewCounts)
+            .filter((productId) => !purchased.includes(productId))
+            .sort((a, b) => viewCounts[b] - viewCounts[a])[0] || null;
+
+        if (topProduct) {
+          console.log("Lytics: top unpurchased product →", topProduct);
+          jstag.send({ top_unpurchased_product: topProduct });
+        } else {
+          console.log("Lytics: no unpurchased viewed products on profile — skipping send");
+        }
+      });
+    };
+
+    const timer = setTimeout(run, 500);
+    return () => clearTimeout(timer);
+  }, []);
 };
 
 // ---------------------------------------------------------------------------
