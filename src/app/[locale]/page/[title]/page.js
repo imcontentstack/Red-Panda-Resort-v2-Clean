@@ -8,7 +8,7 @@ import Hero from "@/components/hero";
 import LandingPageGrid from "@/components/landingPageGrid";
 import ArticleBanner from "@/components/articleBanner";
 import { useParams } from "next/navigation";
-
+import LyticsHomepageSync from "@/components/LyticsHomepageSync";
 
 export default function Page({ }) {
     const [entry, setEntry] = useState({});
@@ -34,6 +34,7 @@ export default function Page({ }) {
 
     return (
         <div>
+            <LyticsHomepageSync />  {/* ← added here */}
             {entry?.modular_blocks?.map((block, index) => {
                 if (block.hasOwnProperty("hero")) {
                     return <PageHero key={index} content={block.hero} />;

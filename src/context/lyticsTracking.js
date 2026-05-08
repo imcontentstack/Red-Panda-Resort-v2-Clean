@@ -8,11 +8,6 @@ const snippet = `!function(){"use strict";var c=window.jstag||(window.jstag={}),
 // Cookie helpers
 // ---------------------------------------------------------------------------
 
-/**
- * Deletes the cs-personalize-manifest cookie so the Personalize edge SDK
- * re-evaluates audience membership on the next request, picking up any
- * audience changes that Lytics has registered.
- */
 function invalidatePersonalizeManifest() {
   if (typeof document === "undefined") return;
   document.cookie =
@@ -144,6 +139,53 @@ export const useEntity = () => {
 };
 
 // ---------------------------------------------------------------------------
+// useTopUnpurchasedProduct  ← NEW
+// ---------------------------------------------------------------------------
+//
+// Reads the current Lytics profile on homepage load, finds the product with
+// the highest view count the user has not yet purchased, and sends it back
+// to Lytics as `top_unpurchased_product`.
+//
+// Depends on two profile fields built by Conductor:
+//   - product_view_counts     map[string]int  (Pipeline 1)
+//   - purchased_product_ids   []string        (from purchase events)
+//
+// Writes to:
+//   - top_unpurchased_product  string  (Pipeline 2, mergeop: latest)
+//
+// ⚠️  If your purchase events write to a different field name, update
+//     `purchased_product_ids` below to match.
+//
+export const useTopUnpurchasedProduct = () => {
+  const jstag = useJstag();
+
+  useEffect(() => {
+    if (!jstag) return;
+
+    jstag.call("profile", function (profile) {
+      if (!profile || !profile.data) return;
+
+      const viewCounts = profile.data.product_view_counts || {};
+      const purchased = profile.data.purchased_product_ids || [];
+
+      const topProduct =
+        Object.keys(viewCounts)
+          .filter((productId) => !purchased.includes(productId))
+          .sort((a, b) => viewCounts[b] - viewCounts[a])[0] || null;
+
+      if (topProduct) {
+        console.log("Lytics: top unpurchased product →", topProduct);
+        jstag.send({ top_unpurchased_product: topProduct });
+      } else {
+        console.log(
+          "Lytics: no unpurchased viewed products on profile — skipping send"
+        );
+      }
+    });
+  }, [jstag]);
+};
+
+// ---------------------------------------------------------------------------
 // LyticsTracking component
 // ---------------------------------------------------------------------------
 
@@ -151,28 +193,11 @@ export function LyticsTracking() {
   const jstag = useJstag();
   const pathname = usePathname();
 
-  // ── Fix 1: fire pageView on every Next.js route change ───────────────────
-  //
-  // Previously pageView() was only called once when jstag loaded. Because
-  // Next.js is a SPA, client-side navigation doesn't reload the page so
-  // Lytics never saw subsequent page views and experiences didn't fire.
-  // Now we watch the pathname and call pageView() on every route change.
-  //
   useEffect(() => {
     if (!jstag) return;
     jstag.pageView();
   }, [pathname, jstag]);
 
-  // ── Fix 2: reinitialize Pathfora on every route change ───────────────────
-  //
-  // Pathfora evaluates its display rules (URL matching, audience targeting,
-  // frequency caps) once on page load. Because Next.js handles navigation
-  // client-side without a full page reload, Pathfora never re-evaluates and
-  // widgets don't appear when navigating to a page that should show one.
-  //
-  // pathfora.clearAll() + triggerWidgets() tells Pathfora to re-run all
-  // display rule checks against the current URL and user state.
-  //
   useEffect(() => {
     if (!jstag) return;
     if (typeof window === "undefined") return;
@@ -188,17 +213,6 @@ export function LyticsTracking() {
     return () => clearTimeout(timer);
   }, [pathname]);
 
-  // ── Fix 3: reload on audience change ─────────────────────────────────────
-  //
-  // When Lytics registers a user into a new audience, we:
-  //   1. Invalidate the stale cs-personalize-manifest cookie
-  //   2. Reload the page so the middleware re-evaluates with the updated
-  //      audience state and serves the correct Personalize variant immediately
-  //
-  // We reload on any audience change rather than guarding for specific
-  // audiences — personalisation should always reflect the user's current
-  // state dynamically.
-  //
   useEffect(() => {
     if (!jstag) return;
 
