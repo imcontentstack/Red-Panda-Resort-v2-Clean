@@ -18,6 +18,7 @@ import RecommendationsBanner from "@/components/recommendationsBanner";
 import UserProfileForm from "@/components/userProfileForm";
 import ArticleBanner from "@/components/articleBanner";
 import Modal from "@/components/modal";
+import LyticsHomepageSync from "@/components/LyticsHomepageSync"; // ← added
 import { useParams } from "next/navigation";
 import { useDataContext } from "@/context/data.context";
 import { homepageReferences } from "@/helpers/referencePaths";
@@ -88,6 +89,7 @@ export default function Home({ }) {
         data-contenttype="homepage"
         data-locale={params.locale}
       >
+        <LyticsHomepageSync /> {/* ← added */}
         <Hero
           content={entry?.hero}
           locale={params.locale}
@@ -135,16 +137,16 @@ export default function Home({ }) {
                 <LeadCapture key={index} content={block.lead_capture} />
               )}
               {block.hasOwnProperty("agent") && (
-                  <Agent key={index} agentData={block.agent} />
+                <Agent key={index} agentData={block.agent} />
               )}
               {block.hasOwnProperty("recommendations_banner") && (
-                  <RecommendationsBanner key={index} content={block.recommendations_banner} />
+                <RecommendationsBanner key={index} content={block.recommendations_banner} />
               )}
               {block.hasOwnProperty("data_and_insights_form_builder") && (
-                  <UserProfileForm key={index} content={block.data_and_insights_form_builder} />
+                <UserProfileForm key={index} content={block.data_and_insights_form_builder} />
               )}
               {block.hasOwnProperty("article_banner") && (
-                  <ArticleBanner key={index} content={block.article_banner} />
+                <ArticleBanner key={index} content={block.article_banner} />
               )}
             </div>
           ))}
