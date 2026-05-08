@@ -127,7 +127,7 @@ export const useEntity = () => {
   const [entity, setEntity] = useState(null);
 
   useEffect(() => {
-    if (!jstag) return; // ← guard added
+    if (!jstag) return;
 
     const off = jstag.on("entity.loaded", (_, entity) => {
       setEntity(entity);
@@ -135,7 +135,7 @@ export const useEntity = () => {
     return () => {
       off();
     };
-  }, [jstag]); // ← jstag added to dependency array
+  }, [jstag]);
 
   return entity;
 };
@@ -162,13 +162,26 @@ export const useTopUnpurchasedProduct = () => {
 
     const run = () => {
       attempts++;
-      console.log(`useTopUnpurchasedProduct attempt ${attempts}, jstag:`, typeof jstag !== "undefined" ? "ready" : "undefined");
+      console.log(
+        `useTopUnpurchasedProduct attempt ${attempts}, jstag:`,
+        typeof jstag !== "undefined" ? "ready" : "undefined"
+      );
 
+      // jstag not available yet — retry
       if (typeof jstag === "undefined") {
         if (attempts < maxAttempts) {
           setTimeout(run, 500);
         } else {
           console.log("useTopUnpurchasedProduct: jstag never became available");
+        }
+        return;
+      }
+
+      // jstag present but not fully loaded yet — retry
+      if (!jstag.isLoaded) {
+        console.log("useTopUnpurchasedProduct: jstag not fully loaded yet, retrying...");
+        if (attempts < maxAttempts) {
+          setTimeout(run, 500);
         }
         return;
       }
@@ -189,7 +202,9 @@ export const useTopUnpurchasedProduct = () => {
           console.log("Lytics: top unpurchased product →", topProduct);
           jstag.send({ top_unpurchased_product: topProduct });
         } else {
-          console.log("Lytics: no unpurchased viewed products on profile — skipping send");
+          console.log(
+            "Lytics: no unpurchased viewed products on profile — skipping send"
+          );
         }
       });
     };
