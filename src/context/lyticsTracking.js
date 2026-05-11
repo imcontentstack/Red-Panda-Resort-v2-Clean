@@ -167,7 +167,6 @@ export const useTopUnpurchasedProduct = () => {
         typeof jstag !== "undefined" ? "ready" : "undefined"
       );
 
-      // jstag not available yet — retry
       if (typeof jstag === "undefined") {
         if (attempts < maxAttempts) {
           setTimeout(run, 500);
@@ -177,7 +176,6 @@ export const useTopUnpurchasedProduct = () => {
         return;
       }
 
-      // jstag present but not fully loaded yet — retry
       if (!jstag.isLoaded) {
         console.log("useTopUnpurchasedProduct: jstag not fully loaded yet, retrying...");
         if (attempts < maxAttempts) {
@@ -186,28 +184,32 @@ export const useTopUnpurchasedProduct = () => {
         return;
       }
 
-      // Use entity.loaded event — safer than jstag.call("profile")
-      // which can throw during the async queue replay phase
-      jstag.on("entity.loaded", function (_, entity) {
-        console.log("entity loaded in useTopUnpurchasedProduct:", entity);
-        if (!entity || !entity.data) return;
+      // Use entity.loaded as the signal that jstag is fully ready,
+      // then call the full Lytics profile which has product_view_counts
+      jstag.on("entity.loaded", function () {
+        setTimeout(function () {
+          jstag.call("profile", function (profile) {
+            console.log("profile callback fired:", profile);
+            if (!profile || !profile.data) return;
 
-        const viewCounts = entity.data.product_view_counts || {};
-        const purchased = entity.data.purchased_skus || [];
+            const viewCounts = profile.data.product_view_counts || {};
+            const purchased = profile.data.purchased_skus || [];
 
-        const topProduct =
-          Object.keys(viewCounts)
-            .filter((productId) => !purchased.includes(productId))
-            .sort((a, b) => viewCounts[b] - viewCounts[a])[0] || null;
+            const topProduct =
+              Object.keys(viewCounts)
+                .filter((productId) => !purchased.includes(productId))
+                .sort((a, b) => viewCounts[b] - viewCounts[a])[0] || null;
 
-        if (topProduct) {
-          console.log("Lytics: top unpurchased product →", topProduct);
-          jstag.send({ top_unpurchased_product: topProduct });
-        } else {
-          console.log(
-            "Lytics: no unpurchased viewed products on profile — skipping send"
-          );
-        }
+            if (topProduct) {
+              console.log("Lytics: top unpurchased product →", topProduct);
+              jstag.send({ top_unpurchased_product: topProduct });
+            } else {
+              console.log(
+                "Lytics: no unpurchased viewed products on profile — skipping send"
+              );
+            }
+          });
+        }, 200);
       });
     };
 
