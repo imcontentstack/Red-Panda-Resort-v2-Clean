@@ -168,28 +168,34 @@ export const useTopUnpurchasedProduct = () => {
         return;
       }
 
-      jstag.getEntity(function (entity) {
-        console.log("getEntity callback fired:", entity);
-        if (!entity || !entity.data) return;
+      jstag.getid(function (id) {
+        console.log("Lytics user id:", id);
+        if (!id) return;
 
-        const user = entity.data.user || {};
-        const viewCounts = user.product_view_counts || {};
-        const purchased = user.purchased_skus || [];
+        fetch(`/api/lytics-profile?id=${id}`)
+          .then((res) => res.json())
+          .then((profile) => {
+            console.log("Lytics profile:", profile);
 
-        console.log("viewCounts:", viewCounts);
-        console.log("purchased:", purchased);
+            const viewCounts = profile.product_view_counts || {};
+            const purchased = profile.purchased_skus || [];
 
-        const topProduct =
-          Object.keys(viewCounts)
-            .filter((productId) => !purchased.includes(productId))
-            .sort((a, b) => viewCounts[b] - viewCounts[a])[0] || null;
+            console.log("viewCounts:", viewCounts);
+            console.log("purchased:", purchased);
 
-        if (topProduct) {
-          console.log("Lytics: top unpurchased product →", topProduct);
-          jstag.send({ top_unpurchased_product: topProduct });
-        } else {
-          console.log("Lytics: no unpurchased viewed products — skipping send");
-        }
+            const topProduct =
+              Object.keys(viewCounts)
+                .filter((productId) => !purchased.includes(productId))
+                .sort((a, b) => viewCounts[b] - viewCounts[a])[0] || null;
+
+            if (topProduct) {
+              console.log("Lytics: top unpurchased product →", topProduct);
+              jstag.send({ top_unpurchased_product: topProduct });
+            } else {
+              console.log("Lytics: no unpurchased viewed products — skipping send");
+            }
+          })
+          .catch((err) => console.error("Lytics profile fetch failed:", err));
       });
     };
 
