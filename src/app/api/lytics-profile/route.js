@@ -3,12 +3,21 @@ export async function GET(request) {
   const id = searchParams.get("id");
   if (!id) return Response.json({ error: "no id" }, { status: 400 });
 
-  const res = await fetch(
-    `https://api.lytics.io/api/user/_uids/${id}?access_token=${process.env.LYTICS_API_KEY}`,
-    { cache: "no-store" }
-  );
+  const apiKey = process.env.LYTICS_API_KEY;
+  console.log("LYTICS_API_KEY present:", !!apiKey); // ← logs true/false, not the key itself
+  console.log("Fetching Lytics profile for id:", id);
 
-  if (!res.ok) return Response.json({ error: "lytics error" }, { status: 500 });
+  const url = `https://api.lytics.io/api/user/_uids/${id}?access_token=${apiKey}`;
+  
+  const res = await fetch(url, { cache: "no-store" });
+  
+  console.log("Lytics API response status:", res.status);
+
+  if (!res.ok) {
+    const body = await res.text();
+    console.log("Lytics API error body:", body);
+    return Response.json({ error: "lytics error" }, { status: 500 });
+  }
 
   const data = await res.json();
   const fields = data?.data || {};
