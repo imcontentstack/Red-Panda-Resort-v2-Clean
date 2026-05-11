@@ -14,6 +14,7 @@ import {
 } from '@headlessui/react';
 import { CheckIcon } from '@heroicons/react/24/outline';
 import { useParams } from 'next/navigation';
+import { useJstag } from '@/context/lyticsTracking'; // ← added
 
 export default function Page({ }) {
     const [isLoading, setIsLoading] = useState(true);
@@ -21,7 +22,7 @@ export default function Page({ }) {
     const [category, setCategory] = useState('None');
     const [entry, setEntry] = useState({});
     const params = useParams();
-
+    const jstag = useJstag(); // ← added
 
     const getContent = async () => {
         const entry = await ContentstackClient.getElementByUrl('rewards', '/rewards', params.locale);
@@ -36,7 +37,18 @@ export default function Page({ }) {
     async function submit (e) {
         e.preventDefault();
 
-        setPersonalizeLiveAttributesCookie({ client_type: category })
+        // Set Personalize cookie as before
+        setPersonalizeLiveAttributesCookie({ client_type: category });
+
+        // Send customer_type to Lytics profile ← added
+        if (jstag) {
+            jstag.send({
+                _e: "profile_update",
+                customer_type: category  // "big_kid", "little_kid", or "parent"
+            });
+            console.log("Lytics: customer_type sent →", category);
+        }
+
         setDialogOpen(true);
     }
 
