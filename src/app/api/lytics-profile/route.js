@@ -7,7 +7,7 @@ export async function GET(request) {
   console.log("LYTICS_API_KEY present:", !!apiKey);
   console.log("Fetching Lytics profile for id:", id);
 
-  const url = `https://api.lytics.io/api/user/9616/_uid/${id}?access_token=${apiKey}`;
+  const url = `https://api.lytics.io/api/entity/user/_uid/${id}?key=${apiKey}`;
 
   const res = await fetch(url, { cache: "no-store" });
 
