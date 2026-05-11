@@ -162,58 +162,38 @@ export const useTopUnpurchasedProduct = () => {
 
     const run = () => {
       attempts++;
-      console.log(
-        `useTopUnpurchasedProduct attempt ${attempts}, jstag:`,
-        typeof jstag !== "undefined" ? "ready" : "undefined"
-      );
 
-      if (typeof jstag === "undefined") {
-        if (attempts < maxAttempts) {
-          setTimeout(run, 500);
+      if (typeof jstag === "undefined" || !jstag.isLoaded) {
+        if (attempts < maxAttempts) setTimeout(run, 500);
+        return;
+      }
+
+      jstag.getEntity(function (entity) {
+        console.log("getEntity callback fired:", entity);
+        if (!entity || !entity.data) return;
+
+        const user = entity.data.user || {};
+        const viewCounts = user.product_view_counts || {};
+        const purchased = user.purchased_skus || [];
+
+        console.log("viewCounts:", viewCounts);
+        console.log("purchased:", purchased);
+
+        const topProduct =
+          Object.keys(viewCounts)
+            .filter((productId) => !purchased.includes(productId))
+            .sort((a, b) => viewCounts[b] - viewCounts[a])[0] || null;
+
+        if (topProduct) {
+          console.log("Lytics: top unpurchased product →", topProduct);
+          jstag.send({ top_unpurchased_product: topProduct });
         } else {
-          console.log("useTopUnpurchasedProduct: jstag never became available");
+          console.log("Lytics: no unpurchased viewed products — skipping send");
         }
-        return;
-      }
-
-      if (!jstag.isLoaded) {
-        console.log("useTopUnpurchasedProduct: jstag not fully loaded yet, retrying...");
-        if (attempts < maxAttempts) {
-          setTimeout(run, 500);
-        }
-        return;
-      }
-
-      // Use entity.loaded as the signal that jstag is fully ready,
-      // then call the full Lytics profile which has product_view_counts
-      jstag.on("entity.loaded", function () {
-        setTimeout(function () {
-          jstag.call("profile", function (profile) {
-            console.log("profile callback fired:", profile);
-            if (!profile || !profile.data) return;
-
-            const viewCounts = profile.data.product_view_counts || {};
-            const purchased = profile.data.purchased_skus || [];
-
-            const topProduct =
-              Object.keys(viewCounts)
-                .filter((productId) => !purchased.includes(productId))
-                .sort((a, b) => viewCounts[b] - viewCounts[a])[0] || null;
-
-            if (topProduct) {
-              console.log("Lytics: top unpurchased product →", topProduct);
-              jstag.send({ top_unpurchased_product: topProduct });
-            } else {
-              console.log(
-                "Lytics: no unpurchased viewed products on profile — skipping send"
-              );
-            }
-          });
-        }, 200);
       });
     };
 
-    const timer = setTimeout(run, 500);
+    const timer = setTimeout(run, 1000);
     return () => clearTimeout(timer);
   }, []);
 };
