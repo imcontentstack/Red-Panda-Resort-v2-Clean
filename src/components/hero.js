@@ -179,14 +179,35 @@ export default function Hero({ content, locale, withHeader, cslp }) {
                           >
                             {hero?.page && (
                                 <Link
-                                href={
-                                  (hero?.page?.length > 0 && hero?.page?.[0]?.url) ? hero?.page?.[0]?.url : "#"
-                                }
-                                className="rounded-md button px-8 py-4 text-md tracking-widest uppercase font-bold text-white shadow-sm ring-2 ring-inset ring-gray-300 hover:text-neutral-700 hover:bg-gray-50"
-                                {...hero?.$?.button_text}
-                              >
-                                {hero?.button_text}
-                              </Link>
+                                  href={
+                                    hero?.page?.length > 0 && hero?.page?.[0]?.url
+                                      ? hero?.page?.[0]?.url
+                                      : "#"
+                                  }
+                                  className="rounded-md button px-8 py-4 text-md tracking-widest uppercase font-bold text-white shadow-sm ring-2 ring-inset ring-gray-300 hover:text-neutral-700 hover:bg-gray-50"
+                                  {...hero?.$?.button_text}
+                                  onClick={() => {
+                                    const lytics = hero?.analytics_lytics_tracking;
+
+                                    if (typeof window !== "undefined" && window?.jstag && lytics?.lytics_event_name) {
+                                      window.jstag.send({
+                                        event: lytics.lytics_event_name,
+                                        cta_name: lytics.lytics_cta_name || hero?.button_text,
+                                        intent: lytics.lytics_intent || "",
+                                        campaign: lytics.lytics_campaign || "",
+                                        hero_header: hero?.header || "",
+                                        button_text: hero?.button_text || "",
+                                        page_url: window.location.pathname,
+                                        destination_url:
+                                          hero?.page?.length > 0 && hero?.page?.[0]?.url
+                                            ? hero.page[0].url
+                                            : "",
+                                      });
+                                    }
+                                  }}
+                                >
+                                  {hero?.button_text}
+                                </Link>
                             )}
                           </div>
                         )
