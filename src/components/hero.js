@@ -186,11 +186,15 @@ export default function Hero({ content, locale, withHeader, cslp }) {
                                   }
                                   className="rounded-md button px-8 py-4 text-md tracking-widest uppercase font-bold text-white shadow-sm ring-2 ring-inset ring-gray-300 hover:text-neutral-700 hover:bg-gray-50"
                                   {...hero?.$?.button_text}
-                                  onClick={() => {
-                                    const lytics = hero?.analytics_lytics_tracking;
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    console.log("[Hero CTA] clicked");
 
+                                    const lytics = hero?.analytics_lytics_tracking;
+                                    console.log("[Hero CTA] lytics config:", lytics);
+                                    console.log("[Hero CTA] window.jstag:", typeof window !== "undefined" ? window.jstag : null);
                                     if (typeof window !== "undefined" && window?.jstag && lytics?.lytics_event_name) {
-                                      window.jstag.send({
+                                      const payload = {
                                         event: lytics.lytics_event_name,
                                         cta_name: lytics.lytics_cta_name || hero?.button_text,
                                         intent: lytics.lytics_intent || "",
@@ -202,6 +206,15 @@ export default function Hero({ content, locale, withHeader, cslp }) {
                                           hero?.page?.length > 0 && hero?.page?.[0]?.url
                                             ? hero.page[0].url
                                             : "",
+                                      };
+
+                                      console.log("[Hero CTA] sending to Lytics:", payload);
+                                      window.jstag.send(payload);
+                                    } else {
+                                      console.warn("[Hero CTA] Lytics not sent", {
+                                        hasJstag: !!window?.jstag,
+                                        eventName: lytics?.lytics_event_name,
+                                        lytics,
                                       });
                                     }
                                   }}
