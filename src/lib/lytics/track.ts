@@ -1,10 +1,18 @@
-export function trackLyticsEvent(payload: Record<string, any>) {
-  if (typeof window === 'undefined') return;
+declare global {
+  interface Window {
+    jstag?: {
+      send?: (payload: Record<string, unknown>) => void;
+    };
+  }
+}
 
-  const jstag = (window as any).jstag;
+export function trackLyticsEvent(payload: Record<string, unknown>) {
+  if (typeof window === "undefined") return;
+
+  const jstag = window.jstag;
 
   if (!jstag?.send) {
-    console.warn('[Lytics] JSTag not available', payload);
+    console.warn("[Lytics] JSTag not available", payload);
     return;
   }
 
