@@ -90,6 +90,7 @@ export default function Home({ }) {
         data-locale={params.locale}
       >
         <LyticsHomepageSync /> {/* ← added */}
+          console.log("Homepage campaign section", entry?.campaigns_section);
         <Hero
           content={entry?.hero}
           campaigns={entry?.campaigns_section || []}
