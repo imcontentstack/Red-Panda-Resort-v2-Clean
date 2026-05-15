@@ -70,6 +70,21 @@ export function resolveCampaignHero({ heroes = [], lyticsUser }) {
       : null,
   ].filter(Boolean);
 
+    if (typeof window !== "undefined") {
+    console.log("Campaign resolver debug", {
+      testAffinity,
+      matchedAudienceKeys,
+      activeHeroes: activeHeroes.map((hero) => ({
+        header: hero?.header,
+        campaign_key: hero?.campaign_key || hero?.campaign_section?.campaign_key,
+        active: hero?.active || hero?.campaign_active || hero?.campaign_section?.active,
+        manual_override:
+          hero?.manual_override || hero?.campaign_section?.manual_override,
+        priority: hero?.priority || hero?.campaign_section?.priority,
+      })),
+    });
+  }
+
   const audienceMatch = activeHeroes
     .filter((hero) => {
       const key = getCampaignKey(hero);
