@@ -58,7 +58,7 @@ export default function Home() {
           "page",
           params.locale,
           pagesReferences,
-          initialData
+          null
         );
 
         console.log("RAW campaign pages", campaignPages);
