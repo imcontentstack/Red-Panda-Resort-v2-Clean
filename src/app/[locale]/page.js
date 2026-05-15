@@ -18,38 +18,81 @@ import RecommendationsBanner from "@/components/recommendationsBanner";
 import UserProfileForm from "@/components/userProfileForm";
 import ArticleBanner from "@/components/articleBanner";
 import Modal from "@/components/modal";
-import LyticsHomepageSync from "@/components/LyticsHomepageSync"; // ← added
+import LyticsHomepageSync from "@/components/LyticsHomepageSync";
 import { useParams } from "next/navigation";
 import { useDataContext } from "@/context/data.context";
-import { homepageReferences } from "@/helpers/referencePaths";
-import { jsonToHTML } from '@contentstack/utils';
-import { inLivePreview } from '@/utils/lp';
+import { homepageReferences, pagesReferences } from "@/helpers/referencePaths";
+import { jsonToHTML } from "@contentstack/utils";
+import { inLivePreview } from "@/utils/lp";
 
-export default function Home({ }) {
+export default function Home() {
   const [entry, setEntry] = useState({});
+  const [campaigns, setCampaigns] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const params = useParams();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const initialData = useDataContext();
 
   const getContent = async () => {
-    const entry = await ContentstackClient.getElementByTypeWithRefs(
-      "homepage",
-      params.locale,
-      homepageReferences,
-      initialData
-    );
+    try {
+      const homepageEntry = await ContentstackClient.getElementByTypeWithRefs(
+        "homepage",
+        params.locale,
+        homepageReferences,
+        initialData
+      );
 
-    const first = entry?.[0];
-    if (first) {
-      jsonToHTML({
-        entry: first,
-        paths: ['modular_blocks.category_banner.description']
-      });
+      const first = homepageEntry?.[0];
+
+      if (first) {
+        jsonToHTML({
+          entry: first,
+          paths: ["modular_blocks.category_banner.description"],
+        });
+      }
+
+      let campaignCandidates = [];
+
+      try {
+        const campaignPages = await ContentstackClient.getElementByTypeWithRefs(
+          "page",
+          params.locale,
+          pagesReferences,
+          initialData
+        );
+
+        campaignCandidates =
+          campaignPages
+            ?.map((page) => {
+              const campaign =
+                page?.campaigns_section || page?.campaign_section || null;
+
+              if (!campaign) return null;
+
+              return {
+                ...campaign,
+                page_title: page?.title,
+                page_url: page?.url,
+                page_uid: page?.uid,
+              };
+            })
+            ?.filter((campaign) => campaign?.campaign_key) || [];
+      } catch (campaignError) {
+        console.warn("Campaign page fetch failed:", campaignError);
+        campaignCandidates = [];
+      }
+
+      console.log("Campaign candidates for homepage", campaignCandidates);
+
+      setCampaigns(campaignCandidates);
+      setEntry(first ?? {});
+    } catch (error) {
+      console.error("Homepage content fetch failed:", error);
+      setEntry({});
+      setCampaigns([]);
+    } finally {
+      setIsLoading(false);
     }
-
-    setEntry(first ?? {});
-    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -63,8 +106,10 @@ export default function Home({ }) {
     const modalData = entry?.modal?.[0];
     const hasValidModal =
       modalData &&
-      ((Array.isArray(modalData.modular_blocks) && modalData.modular_blocks.length > 0) ||
+      ((Array.isArray(modalData.modular_blocks) &&
+        modalData.modular_blocks.length > 0) ||
         Boolean(modalData.button_text));
+
     if (!isLoading && hasValidModal && !inLivePreview()) {
       const key = `homepage_modal_shown_${params.locale}`;
       const hasShownModal = localStorage.getItem(key);
@@ -82,11 +127,6 @@ export default function Home({ }) {
 
   if (isLoading) return null;
 
-  console.log(
-    "Homepage campaign section",
-    entry?.campaign_section || entry?.campaigns_section
-  );
-
   return (
     <>
       <div
@@ -94,14 +134,16 @@ export default function Home({ }) {
         data-contenttype="homepage"
         data-locale={params.locale}
       >
-        <LyticsHomepageSync /> {/* ← added */}
+        <LyticsHomepageSync />
+
         <Hero
           content={entry?.hero}
-          campaigns={entry?.campaigns_section || []}
+          campaigns={campaigns}
           locale={params?.locale}
           withHeader={true}
           cslp={entry?.$}
         />
+
         <div
           className={
             entry?.modular_blocks?.length === 0
@@ -146,10 +188,16 @@ export default function Home({ }) {
                 <Agent key={index} agentData={block.agent} />
               )}
               {block.hasOwnProperty("recommendations_banner") && (
-                <RecommendationsBanner key={index} content={block.recommendations_banner} />
+                <RecommendationsBanner
+                  key={index}
+                  content={block.recommendations_banner}
+                />
               )}
               {block.hasOwnProperty("data_and_insights_form_builder") && (
-                <UserProfileForm key={index} content={block.data_and_insights_form_builder} />
+                <UserProfileForm
+                  key={index}
+                  content={block.data_and_insights_form_builder}
+                />
               )}
               {block.hasOwnProperty("article_banner") && (
                 <ArticleBanner key={index} content={block.article_banner} />
@@ -159,7 +207,11 @@ export default function Home({ }) {
         </div>
 
         <Footer />
-        <Modal content={entry?.modal} open={isModalOpen} onClose={() => setIsModalOpen(false)} />
+        <Modal
+          content={entry?.modal}
+          open={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+        />
       </div>
     </>
   );
