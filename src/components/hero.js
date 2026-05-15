@@ -145,7 +145,7 @@ export default function Hero({ content, locale, withHeader, cslp }) {
   let buttonClass = "";
 
   if (resolvedContent && resolvedContent?.length > 0) {
-  const c0 = resolvedContent?.[0];
+    const c0 = resolvedContent?.[0];
     if (c0?.text_position === "Top Left") {
       positionClass = "top-16 left-16";
     } else if (c0?.text_position === "Top Center") {
@@ -171,8 +171,8 @@ export default function Hero({ content, locale, withHeader, cslp }) {
     }
   }
 
-  if (content && content?.length > 0) {
-    const c0 = content?.[0];
+  if (resolvedContent && resolvedContent?.length > 0) {
+    const c0 = resolvedContent?.[0];
     if (c0?.alignment === "Left") {
       headlineClass = "text-left";
       bodyClass = "text-left";
@@ -189,7 +189,7 @@ export default function Hero({ content, locale, withHeader, cslp }) {
   }
 
   if (resolvedContent && resolvedContent?.length) {
-  if (resolvedContent?.[0]?.header_overlay !== true) {
+    if (resolvedContent?.[0]?.header_overlay !== true) {
       withHeader = false;
     }
   }
@@ -203,7 +203,7 @@ export default function Hero({ content, locale, withHeader, cslp }) {
         viewport={{ once: true }}
       >
         <div className=" ">
-          {resolvedContent?.map((hero, index) => {((hero, index) => {
+          {resolvedContent?.map((hero, index) => {
             // ── Aspect ratio (unchanged from base) ──────────────────────────
             let aspectRatioClass = "aspect-video";
             if (hero?.aspect_ratio === "16:9") {
@@ -268,6 +268,12 @@ export default function Hero({ content, locale, withHeader, cslp }) {
                 key={index}
                 className={`bg-black relative isolate overflow-hidden flex ${containerHeightClass}`}
               >
+                {process.env.NODE_ENV === "development" && index === 0 && (
+                  <div className="absolute top-4 right-4 z-50 rounded bg-black/70 px-4 py-2 text-xs text-white">
+                    Campaign: {hero?.campaign_key || "default"} | Reason: {campaignDecisionReason}
+                  </div>
+                )}
+
                 {videoFile ? (
                   <video
                     className="absolute inset-0 -z-10 min-h-full min-w-full h-full w-full object-cover"
