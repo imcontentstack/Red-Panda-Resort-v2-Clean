@@ -1,20 +1,20 @@
-export function isCampaignActive(hero) {
+export function isCampaignActive(campaign) {
   const now = new Date();
 
   const active =
-    hero?.campaign_active === true ||
-    hero?.active === true ||
-    hero?.campaign_section?.active === true;
+    campaign?.campaign_active === true ||
+    campaign?.active === true ||
+    campaign?.campaign_section?.active === true;
 
   const startDate =
-    hero?.campaign_start_date ||
-    hero?.start_date ||
-    hero?.campaign_section?.start_date;
+    campaign?.campaign_start_date ||
+    campaign?.start_date ||
+    campaign?.campaign_section?.start_date;
 
   const endDate =
-    hero?.campaign_end_date ||
-    hero?.end_date ||
-    hero?.campaign_section?.end_date;
+    campaign?.campaign_end_date ||
+    campaign?.end_date ||
+    campaign?.campaign_section?.end_date;
 
   const startOk = !startDate || new Date(startDate) <= now;
   const endOk = !endDate || new Date(endDate) >= now;
@@ -22,40 +22,31 @@ export function isCampaignActive(hero) {
   return active && startOk && endOk;
 }
 
-function getPriority(hero) {
-  return Number(hero?.priority || hero?.campaign_section?.priority || 0);
+function getPriority(campaign) {
+  return Number(campaign?.priority || campaign?.campaign_section?.priority || 0);
 }
 
-function getCampaignKey(hero) {
-  return String(
-    hero?.campaign_key || hero?.campaign_section?.campaign_key || ""
-  )
+function getCampaignKey(item) {
+  return String(item?.campaign_key || item?.campaign_section?.campaign_key || "")
     .trim()
     .toLowerCase();
 }
 
-export function resolveCampaignHero({ heroes = [], lyticsUser }) {
-  const activeHeroes = heroes.filter(isCampaignActive);
+function findHeroForCampaign(heroes, campaign) {
+  const key = getCampaignKey(campaign);
+
+  return (
+    heroes.find((hero) => getCampaignKey(hero) === key) ||
+    heroes.find((hero) => String(hero?.header || "").toLowerCase().includes(key)) ||
+    null
+  );
+}
+
+export function resolveCampaignHero({ heroes = [], campaigns = [], lyticsUser }) {
+  const activeCampaigns = campaigns.filter(isCampaignActive);
 
   const testAffinity =
-    typeof window !== "undefined"
-      ? localStorage.getItem("test_affinity")
-      : null;
-
-  const manualOverride = activeHeroes
-    .filter(
-      (hero) =>
-        hero?.manual_override === true ||
-        hero?.campaign_section?.manual_override === true
-    )
-    .sort((a, b) => getPriority(b) - getPriority(a))[0];
-
-  if (manualOverride) {
-    return {
-      heroes: [manualOverride],
-      reason: "manual_override",
-    };
-  }
+    typeof window !== "undefined" ? localStorage.getItem("test_affinity") : null;
 
   const matchedAudienceKeys = [
     "all",
@@ -70,31 +61,50 @@ export function resolveCampaignHero({ heroes = [], lyticsUser }) {
       : null,
   ].filter(Boolean);
 
-    if (typeof window !== "undefined") {
+  if (typeof window !== "undefined") {
     console.log("Campaign resolver debug", {
       testAffinity,
       matchedAudienceKeys,
-      activeHeroes: activeHeroes.map((hero) => ({
-        header: hero?.header,
-        campaign_key: hero?.campaign_key || hero?.campaign_section?.campaign_key,
-        active: hero?.active || hero?.campaign_active || hero?.campaign_section?.active,
+      activeCampaigns: activeCampaigns.map((campaign) => ({
+        campaign_key: getCampaignKey(campaign),
+        active:
+          campaign?.active ||
+          campaign?.campaign_active ||
+          campaign?.campaign_section?.active,
         manual_override:
-          hero?.manual_override || hero?.campaign_section?.manual_override,
-        priority: hero?.priority || hero?.campaign_section?.priority,
+          campaign?.manual_override || campaign?.campaign_section?.manual_override,
+        priority: getPriority(campaign),
       })),
     });
   }
 
-  const audienceMatch = activeHeroes
-    .filter((hero) => {
-      const key = getCampaignKey(hero);
+  const manualOverride = activeCampaigns
+    .filter(
+      (campaign) =>
+        campaign?.manual_override === true ||
+        campaign?.campaign_section?.manual_override === true
+    )
+    .sort((a, b) => getPriority(b) - getPriority(a))[0];
+
+  if (manualOverride) {
+    const hero = findHeroForCampaign(heroes, manualOverride);
+    return {
+      heroes: hero ? [hero] : heroes?.length ? [heroes[0]] : [],
+      reason: "manual_override",
+    };
+  }
+
+  const audienceMatch = activeCampaigns
+    .filter((campaign) => {
+      const key = getCampaignKey(campaign);
       return key && matchedAudienceKeys.includes(key);
     })
     .sort((a, b) => getPriority(b) - getPriority(a))[0];
 
   if (audienceMatch) {
+    const hero = findHeroForCampaign(heroes, audienceMatch);
     return {
-      heroes: [audienceMatch],
+      heroes: hero ? [hero] : heroes?.length ? [heroes[0]] : [],
       reason: testAffinity ? "test_affinity_match" : "audience_match",
     };
   }

@@ -80,7 +80,12 @@ export default function Home({ }) {
     }
   }, [isLoading, entry?.modal, params.locale]);
 
-  if (isLoading) return;
+  if (isLoading) return null;
+
+  console.log(
+    "Homepage campaign section",
+    entry?.campaign_section || entry?.campaigns_section
+  );
 
   return (
     <>
@@ -90,7 +95,6 @@ export default function Home({ }) {
         data-locale={params.locale}
       >
         <LyticsHomepageSync /> {/* ← added */}
-          console.log("Homepage campaign section", entry?.campaigns_section);
         <Hero
           content={entry?.hero}
           campaigns={entry?.campaigns_section || []}
