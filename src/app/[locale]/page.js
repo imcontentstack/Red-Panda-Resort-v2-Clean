@@ -61,6 +61,8 @@ export default function Home() {
           initialData
         );
 
+        console.log("RAW campaign pages", campaignPages);
+
         campaignCandidates =
           campaignPages
             ?.map((page) => {
