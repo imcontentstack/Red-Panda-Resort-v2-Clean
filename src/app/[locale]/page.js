@@ -71,16 +71,25 @@ export default function Home() {
 
               if (!campaign) return null;
 
-              const campaignHeroBlock = page?.modular_blocks?.find(
-                (block) => block?.configurable_hero
-            );
+          const campaignHeroBlock = page?.modular_blocks?.find(
+            (block) =>
+              block?.configurable_hero ||
+              block?.hero ||
+              block?.full_page_hero
+          );
+
+          const campaignHero =
+            campaignHeroBlock?.configurable_hero ||
+            campaignHeroBlock?.hero ||
+            campaignHeroBlock?.full_page_hero ||
+            null;
 
             return {
-                ...campaign,
-                page_title: page?.title,
-                page_url: page?.url,
-                page_uid: page?.uid,
-                hero: campaignHeroBlock?.configurable_hero || null,
+              ...campaign,
+              page_title: page?.title,
+              page_url: page?.url,
+              page_uid: page?.uid,
+              hero: campaignHero,
             };
             })
             ?.filter((campaign) => campaign?.campaign_key) || [];
