@@ -35,11 +35,20 @@ function getCampaignKey(item) {
 function findHeroForCampaign(heroes, campaign) {
   const key = getCampaignKey(campaign);
 
-  return (
+  const matchedHero =
     heroes.find((hero) => getCampaignKey(hero) === key) ||
-    heroes.find((hero) => String(hero?.header || "").toLowerCase().includes(key)) ||
-    null
-  );
+    heroes.find((hero) =>
+      String(hero?.header || "").toLowerCase().includes(key)
+    );
+
+  if (matchedHero) return matchedHero;
+
+  return {
+    ...heroes[0],
+    header: campaign?.campaign_name || heroes[0]?.header,
+    body: campaign?.page_title || heroes[0]?.body,
+    campaign_key: key,
+  };
 }
 
 export function resolveCampaignHero({ heroes = [], campaigns = [], lyticsUser }) {
