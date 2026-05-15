@@ -115,6 +115,10 @@ export default function Home() {
             imageOptionsUrl: campaign?.hero?.image_options?.image?.url,
           }))
         );
+          console.log(
+            "Zelda hero full object",
+            campaignCandidates.find((c) => c?.campaign_key === "zelda")?.hero
+          );
       } catch (campaignError) {
         console.warn("Campaign page fetch failed:", campaignError);
         campaignCandidates = [];
