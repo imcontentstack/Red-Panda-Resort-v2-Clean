@@ -121,7 +121,7 @@ function usePersonalizedHeroImage() {
 // Component
 // ---------------------------------------------------------------------------
 
-export default function Hero({ content, locale, withHeader, cslp }) {
+export default function Hero({ content, campaigns = [], locale, withHeader, cslp }) {
   const pathname = usePathname();
 
   // Lytics hook — result is used only to override the hero image on index 0.
@@ -131,13 +131,22 @@ export default function Hero({ content, locale, withHeader, cslp }) {
     usePersonalizedHeroImage();
 
   if (!content || content?.length === 0) return <div></div>;
+  const hasCampaignResolverData =
+    Array.isArray(campaigns) && campaigns.length > 0;
+
   const {
     heroes: resolvedContent,
     reason: campaignDecisionReason,
-  } = resolveCampaignHero({
-    heroes: content,
-    lyticsUser,
-  });
+  } = hasCampaignResolverData
+    ? resolveCampaignHero({
+        heroes: content,
+        campaigns,
+        lyticsUser,
+      })
+    : {
+        heroes: content,
+        reason: "uc1_existing_behaviour",
+      };
 
   let positionClass = "";
   let headlineClass = "";

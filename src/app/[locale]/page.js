@@ -92,9 +92,10 @@ export default function Home({ }) {
         <LyticsHomepageSync /> {/* ← added */}
         <Hero
           content={entry?.hero}
-          locale={params.locale}
+          campaigns={entry?.campaigns_section || []}
+          locale={params?.locale}
           withHeader={true}
-          cslp={entry?.$?.hero}
+          cslp={entry?.$}
         />
         <div
           className={
