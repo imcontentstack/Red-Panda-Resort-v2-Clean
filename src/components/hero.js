@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { usePathname } from "next/navigation";
 import { useEntity } from "@/context/lyticsTracking";
 import { useEffect, useMemo, useState } from "react";
+import { resolveCampaignHero } from "@/utils/resolveCampaignHero";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -130,14 +131,21 @@ export default function Hero({ content, locale, withHeader, cslp }) {
     usePersonalizedHeroImage();
 
   if (!content || content?.length === 0) return <div></div>;
+  const {
+    heroes: resolvedContent,
+    reason: campaignDecisionReason,
+  } = resolveCampaignHero({
+    heroes: content,
+    lyticsUser,
+  });
 
   let positionClass = "";
   let headlineClass = "";
   let bodyClass = "";
   let buttonClass = "";
 
-  if (content && content?.length > 0) {
-    const c0 = content?.[0];
+  if (resolvedContent && resolvedContent?.length > 0) {
+  const c0 = resolvedContent?.[0];
     if (c0?.text_position === "Top Left") {
       positionClass = "top-16 left-16";
     } else if (c0?.text_position === "Top Center") {
@@ -180,8 +188,8 @@ export default function Hero({ content, locale, withHeader, cslp }) {
     }
   }
 
-  if (content && content?.length) {
-    if (content?.[0]?.header_overlay !== true) {
+  if (resolvedContent && resolvedContent?.length) {
+  if (resolvedContent?.[0]?.header_overlay !== true) {
       withHeader = false;
     }
   }
@@ -195,7 +203,7 @@ export default function Hero({ content, locale, withHeader, cslp }) {
         viewport={{ once: true }}
       >
         <div className=" ">
-          {content?.map((hero, index) => {
+          {resolvedContent?.map((hero, index) => {((hero, index) => {
             // ── Aspect ratio (unchanged from base) ──────────────────────────
             let aspectRatioClass = "aspect-video";
             if (hero?.aspect_ratio === "16:9") {
