@@ -59,8 +59,8 @@ function findHeroForCampaign(heroes, campaign) {
     image_options: {
       ...(heroes[0]?.image_options || {}),
       image:
-        campaign?.hero?.metadata?.image?.url
-          ? campaign.hero.metadata.image
+        campaign?.hero?._metadata?.image?.url
+          ? campaign.hero._metadata.image
           : campaign?.hero?.image?.url
           ? campaign.hero.image
           : campaign?.hero?.image_options?.image?.url
