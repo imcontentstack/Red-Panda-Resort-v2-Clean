@@ -1,4 +1,5 @@
 export const homepageReferences = [
+    'campaigns_section',
     'modular_blocks.review.reference',
     'modular_blocks.image_grid.image.page',
     'hero.hero_banner',
