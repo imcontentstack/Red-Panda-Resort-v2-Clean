@@ -71,28 +71,40 @@ export default function Home() {
 
               if (!campaign) return null;
 
-          const campaignHeroBlock = page?.modular_blocks?.find(
-            (block) =>
-              block?.configurable_hero ||
-              block?.hero ||
-              block?.full_page_hero
-          );
+              const campaignHeroBlock = page?.modular_blocks?.find(
+                (block) =>
+                  block?.configurable_hero ||
+                  block?.hero ||
+                  block?.full_page_hero
+              );
 
-          const campaignHero =
-            campaignHeroBlock?.configurable_hero ||
-            campaignHeroBlock?.hero ||
-            campaignHeroBlock?.full_page_hero ||
-            null;
+              const campaignHero =
+                campaignHeroBlock?.configurable_hero ||
+                campaignHeroBlock?.hero ||
+                campaignHeroBlock?.full_page_hero ||
+                null;
 
-            return {
-              ...campaign,
-              page_title: page?.title,
-              page_url: page?.url,
-              page_uid: page?.uid,
-              hero: campaignHero,
-            };
+              return {
+                ...campaign,
+                page_title: page?.title,
+                page_url: page?.url,
+                page_uid: page?.uid,
+                hero: campaignHero,
+              };
             })
             ?.filter((campaign) => campaign?.campaign_key) || [];
+
+        console.log(
+          "Campaign candidates with hero",
+          campaignCandidates.map((campaign) => ({
+            key: campaign?.campaign_key,
+            hasHero: Boolean(campaign?.hero),
+            heroKeys: campaign?.hero ? Object.keys(campaign.hero) : [],
+            image:
+              campaign?.hero?.image?.url ||
+              campaign?.hero?.image_options?.image?.url,
+          }))
+        );
       } catch (campaignError) {
         console.warn("Campaign page fetch failed:", campaignError);
         campaignCandidates = [];
