@@ -45,8 +45,24 @@ function findHeroForCampaign(heroes, campaign) {
 
   return {
     ...heroes[0],
-    header: campaign?.campaign_name || heroes[0]?.header,
-    body: campaign?.page_title || heroes[0]?.body,
+    ...(campaign?.hero || {}),
+    header:
+      campaign?.hero?.headline ||
+      campaign?.hero?.header ||
+      campaign?.campaign_name ||
+      heroes[0]?.header,
+    body:
+      campaign?.hero?.details ||
+      campaign?.hero?.body ||
+      campaign?.page_title ||
+      heroes[0]?.body,
+    image_options: {
+      ...heroes[0]?.image_options,
+      image:
+        campaign?.hero?.image ||
+        campaign?.hero?.image_options?.image ||
+        heroes[0]?.image_options?.image,
+    },
     campaign_key: key,
   };
 }

@@ -71,12 +71,17 @@ export default function Home() {
 
               if (!campaign) return null;
 
-              return {
+              const campaignHeroBlock = page?.modular_blocks?.find(
+                (block) => block?.configurable_hero
+            );
+
+            return {
                 ...campaign,
                 page_title: page?.title,
                 page_url: page?.url,
                 page_uid: page?.uid,
-              };
+                hero: campaignHeroBlock?.configurable_hero || null,
+            };
             })
             ?.filter((campaign) => campaign?.campaign_key) || [];
       } catch (campaignError) {
