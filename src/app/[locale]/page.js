@@ -105,6 +105,16 @@ export default function Home() {
               campaign?.hero?.image_options?.image?.url,
           }))
         );
+
+        console.log(
+          "Campaign hero image check",
+          campaignCandidates.map((campaign) => ({
+            key: campaign?.campaign_key,
+            image: campaign?.hero?.image,
+            imageUrl: campaign?.hero?.image?.url,
+            imageOptionsUrl: campaign?.hero?.image_options?.image?.url,
+          }))
+        );
       } catch (campaignError) {
         console.warn("Campaign page fetch failed:", campaignError);
         campaignCandidates = [];
