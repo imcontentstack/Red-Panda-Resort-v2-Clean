@@ -85,11 +85,15 @@ export function resolveCampaignHero({ heroes = [], campaigns = [], lyticsUser })
     "all",
     testAffinity ? String(testAffinity).trim().toLowerCase() : null,
     latestCampaignInterest,
+
     lyticsUser?.audience_christmas ? "christmas" : null,
     lyticsUser?.audience_pokemon ? "pokemon" : null,
     lyticsUser?.audience_zelda ? "zelda" : null,
     lyticsUser?.audience_parent ? "duplo" : null,
     lyticsUser?.audience_afol ? "technic" : null,
+
+    hasSegment("poc_uc2_low_affinity") ? "low-affinity" : null,
+
     lyticsUser?.primary_trading_set_affinity
       ? String(lyticsUser.primary_trading_set_affinity).trim().toLowerCase()
       : null,
@@ -135,6 +139,12 @@ export function resolveCampaignHero({ heroes = [], campaigns = [], lyticsUser })
       return key && key === latestCampaignInterest && matchedAudienceKeys.includes(key);
     });
 
+   const segments = Array.isArray(lyticsUser?.segments)
+  ? lyticsUser.segments
+  : [];
+
+    const hasSegment = (segment) => segments.includes(segment);
+    
   if (latestInterestMatch) {
       const hero = findHeroForCampaign(heroes, latestInterestMatch);
       return {
