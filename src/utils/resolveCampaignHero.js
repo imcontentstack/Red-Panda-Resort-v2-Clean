@@ -77,6 +77,10 @@ export function resolveCampaignHero({ heroes = [], campaigns = [], lyticsUser })
   const testAffinity =
     typeof window !== "undefined" ? localStorage.getItem("test_affinity") : null;
 
+  const latestCampaignInterest = lyticsUser?.latest_campaign_interest
+    ? String(lyticsUser.latest_campaign_interest).trim().toLowerCase()
+    : null;
+
   const matchedAudienceKeys = [
     "all",
     testAffinity ? String(testAffinity).trim().toLowerCase() : null,
@@ -93,6 +97,7 @@ export function resolveCampaignHero({ heroes = [], campaigns = [], lyticsUser })
   if (typeof window !== "undefined") {
     console.log("Campaign resolver debug", {
       testAffinity,
+      latestCampaignInterest,
       matchedAudienceKeys,
       activeCampaigns: activeCampaigns.map((campaign) => ({
         campaign_key: getCampaignKey(campaign),
@@ -121,6 +126,21 @@ export function resolveCampaignHero({ heroes = [], campaigns = [], lyticsUser })
       heroes: hero ? [hero] : heroes?.length ? [heroes[0]] : [],
       reason: "manual_override",
     };
+  }
+
+  if (latestCampaignInterest) {
+    const latestInterestMatch = activeCampaigns.find((campaign) => {
+      const key = getCampaignKey(campaign);
+      return key && key === latestCampaignInterest && matchedAudienceKeys.includes(key);
+    });
+
+    if (latestInterestMatch) {
+      const hero = findHeroForCampaign(heroes, latestInterestMatch);
+      return {
+        heroes: hero ? [hero] : heroes?.length ? [heroes[0]] : [],
+        reason: "latest_interest_match",
+      };
+    }
   }
 
   const audienceMatch = activeCampaigns
