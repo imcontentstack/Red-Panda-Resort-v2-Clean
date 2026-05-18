@@ -84,6 +84,7 @@ export function resolveCampaignHero({ heroes = [], campaigns = [], lyticsUser })
   const matchedAudienceKeys = [
     "all",
     testAffinity ? String(testAffinity).trim().toLowerCase() : null,
+    latestCampaignInterest,
     lyticsUser?.audience_christmas ? "christmas" : null,
     lyticsUser?.audience_pokemon ? "pokemon" : null,
     lyticsUser?.audience_zelda ? "zelda" : null,
