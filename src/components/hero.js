@@ -130,9 +130,18 @@ export default function Hero({ content, campaigns = [], locale, withHeader, cslp
   const { personalizedImageUrl, ready, lyticsUser } =
     usePersonalizedHeroImage();
 
-  if (!content || content?.length === 0) return <div></div>;
-  const hasCampaignResolverData =
-    Array.isArray(campaigns) && campaigns.length > 0;
+if (!content || content?.length === 0) return <div></div>;
+
+// DEBUG:
+// lets us inspect exactly what Personalize/base content
+// Hero.js is receiving before resolver logic runs
+console.log(
+  "Hero content received by Hero.js",
+  content
+);
+
+const hasCampaignResolverData =
+  Array.isArray(campaigns) && campaigns.length > 0;
 
   const {
     heroes: resolvedContent,
