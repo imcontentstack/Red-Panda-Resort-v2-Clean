@@ -177,8 +177,22 @@ export const useTopUnpurchasedProduct = () => {
           .then((profile) => {
             console.log("Lytics profile:", profile);
 
-            const viewCounts = profile.product_view_counts || {};
-            const purchased = profile.purchased_skus || [];
+            // IMPORTANT:
+            // expose full frontend-readable user object
+            console.log(
+              "FULL LYTICS USER",
+              profile?.data?.user || profile
+            );
+
+            const viewCounts =
+              profile?.product_view_counts ||
+              profile?.data?.user?.product_view_counts ||
+              {};
+
+            const purchased =
+              profile?.purchased_skus ||
+              profile?.data?.user?.purchased_skus ||
+              [];
 
             console.log("viewCounts:", viewCounts);
             console.log("purchased:", purchased);
