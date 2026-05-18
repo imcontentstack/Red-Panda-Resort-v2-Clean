@@ -71,39 +71,75 @@ function findHeroForCampaign(heroes, campaign) {
   };
 }
 
-export function resolveCampaignHero({ heroes = [], campaigns = [], lyticsUser }) {
+export function resolveCampaignHero({
+  heroes = [],
+  campaigns = [],
+  lyticsUser,
+}) {
   const activeCampaigns = campaigns.filter(isCampaignActive);
 
   const testAffinity =
-    typeof window !== "undefined" ? localStorage.getItem("test_affinity") : null;
+    typeof window !== "undefined"
+      ? localStorage.getItem("test_affinity")
+      : null;
 
   const latestCampaignInterest = lyticsUser?.latest_campaign_interest
-    ? String(lyticsUser.latest_campaign_interest).trim().toLowerCase()
+    ? String(lyticsUser.latest_campaign_interest)
+        .trim()
+        .toLowerCase()
     : null;
 
-const matchedAudienceKeys = [
-  "all",
-  testAffinity ? String(testAffinity).trim().toLowerCase() : null,
-  latestCampaignInterest,
+  // -----------------------------------------------------------------------
+  // SEGMENTS
+  // -----------------------------------------------------------------------
 
-  lyticsUser?.audience_christmas ? "christmas" : null,
-  lyticsUser?.audience_pokemon ? "pokemon" : null,
-  lyticsUser?.audience_zelda ? "zelda" : null,
-  lyticsUser?.audience_parent ? "duplo" : null,
-  lyticsUser?.audience_afol ? "technic" : null,
+  const segments = Array.isArray(lyticsUser?.segments)
+    ? lyticsUser.segments
+    : [];
 
-  hasSegment("poc_uc2_low_affinity") ? "low-affinity" : null,
+  const hasSegment = (segment) => segments.includes(segment);
 
-  lyticsUser?.primary_trading_set_affinity
-    ? String(lyticsUser.primary_trading_set_affinity).trim().toLowerCase()
-    : null,
-].filter(Boolean);
+  // -----------------------------------------------------------------------
+  // AUDIENCE / CAMPAIGN MATCHING
+  // -----------------------------------------------------------------------
+
+  const matchedAudienceKeys = [
+    "all",
+
+    testAffinity
+      ? String(testAffinity).trim().toLowerCase()
+      : null,
+
+    latestCampaignInterest,
+
+    lyticsUser?.audience_christmas ? "christmas" : null,
+    lyticsUser?.audience_pokemon ? "pokemon" : null,
+    lyticsUser?.audience_zelda ? "zelda" : null,
+    lyticsUser?.audience_parent ? "duplo" : null,
+    lyticsUser?.audience_afol ? "technic" : null,
+
+    // LOW AFFINITY SEGMENT
+    hasSegment("poc_uc2_low_affinity")
+      ? "low-affinity"
+      : null,
+
+    lyticsUser?.primary_trading_set_affinity
+      ? String(lyticsUser.primary_trading_set_affinity)
+          .trim()
+          .toLowerCase()
+      : null,
+  ].filter(Boolean);
+
+  // -----------------------------------------------------------------------
+  // DEBUG
+  // -----------------------------------------------------------------------
 
   if (typeof window !== "undefined") {
     console.log("Campaign resolver debug", {
       testAffinity,
       latestCampaignInterest,
       matchedAudienceKeys,
+      segments,
       activeCampaigns: activeCampaigns.map((campaign) => ({
         campaign_key: getCampaignKey(campaign),
         active:
@@ -111,11 +147,16 @@ const matchedAudienceKeys = [
           campaign?.campaign_active ||
           campaign?.campaign_section?.active,
         manual_override:
-          campaign?.manual_override || campaign?.campaign_section?.manual_override,
+          campaign?.manual_override ||
+          campaign?.campaign_section?.manual_override,
         priority: getPriority(campaign),
       })),
     });
   }
+
+  // -----------------------------------------------------------------------
+  // MANUAL OVERRIDE
+  // -----------------------------------------------------------------------
 
   const manualOverride = activeCampaigns
     .filter(
@@ -127,26 +168,31 @@ const matchedAudienceKeys = [
 
   if (manualOverride) {
     const hero = findHeroForCampaign(heroes, manualOverride);
+
     return {
       heroes: hero ? [hero] : heroes?.length ? [heroes[0]] : [],
       reason: "manual_override",
     };
   }
 
+  // -----------------------------------------------------------------------
+  // LATEST INTEREST
+  // -----------------------------------------------------------------------
+
   if (latestCampaignInterest) {
     const latestInterestMatch = activeCampaigns.find((campaign) => {
       const key = getCampaignKey(campaign);
-      return key && key === latestCampaignInterest && matchedAudienceKeys.includes(key);
+
+      return (
+        key &&
+        key === latestCampaignInterest &&
+        matchedAudienceKeys.includes(key)
+      );
     });
 
-   const segments = Array.isArray(lyticsUser?.segments)
-  ? lyticsUser.segments
-  : [];
-
-    const hasSegment = (segment) => segments.includes(segment);
-    
-  if (latestInterestMatch) {
+    if (latestInterestMatch) {
       const hero = findHeroForCampaign(heroes, latestInterestMatch);
+
       return {
         heroes: hero ? [hero] : heroes?.length ? [heroes[0]] : [],
         reason: "latest_interest_match",
@@ -154,10 +200,10 @@ const matchedAudienceKeys = [
     }
   }
 
-  // HYBRID MODE:
-  // If there is no manual override and no latest-interest campaign winner,
-  // do NOT force a CMS campaign match here.
-  // Return the original hero content exactly as Contentstack Personalize resolved it.
+  // -----------------------------------------------------------------------
+  // HYBRID MODE
+  // -----------------------------------------------------------------------
+
   return {
     heroes: heroes?.length ? heroes : [],
     reason: "contentstack_personalize_or_default",
