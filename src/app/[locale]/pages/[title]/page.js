@@ -86,6 +86,25 @@ export default function Page() {
    }
  }, [entry]);
 
+useEffect(() => {
+  const campaign =
+    entry?.campaigns_section || entry?.campaign_section || null;
+
+  if (!campaign?.campaign_key) return;
+
+  if (typeof window !== "undefined" && window.jstag?.send) {
+    console.log("Sending campaign interest to Lytics:", campaign.campaign_key);
+
+    window.jstag.send({
+      event: "campaign_interest",
+      campaign_key: campaign.campaign_key,
+      latest_campaign_interest: campaign.campaign_key,
+      page_title: entry?.title || "",
+      page_url: entry?.url || window.location.pathname,
+    });
+  }
+}, [entry]);
+
  console.log("ENTRY:", entry);
 
  return (
