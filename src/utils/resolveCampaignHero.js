@@ -135,7 +135,7 @@ export function resolveCampaignHero({ heroes = [], campaigns = [], lyticsUser })
       return key && key === latestCampaignInterest && matchedAudienceKeys.includes(key);
     });
 
-    if (latestInterestMatch) {
+  if (latestInterestMatch) {
       const hero = findHeroForCampaign(heroes, latestInterestMatch);
       return {
         heroes: hero ? [hero] : heroes?.length ? [heroes[0]] : [],
@@ -144,23 +144,12 @@ export function resolveCampaignHero({ heroes = [], campaigns = [], lyticsUser })
     }
   }
 
-  const audienceMatch = activeCampaigns
-    .filter((campaign) => {
-      const key = getCampaignKey(campaign);
-      return key && matchedAudienceKeys.includes(key);
-    })
-    .sort((a, b) => getPriority(b) - getPriority(a))[0];
-
-  if (audienceMatch) {
-    const hero = findHeroForCampaign(heroes, audienceMatch);
-    return {
-      heroes: hero ? [hero] : heroes?.length ? [heroes[0]] : [],
-      reason: testAffinity ? "test_affinity_match" : "audience_match",
-    };
-  }
-
+  // HYBRID MODE:
+  // If there is no manual override and no latest-interest campaign winner,
+  // do NOT force a CMS campaign match here.
+  // Return the original hero content exactly as Contentstack Personalize resolved it.
   return {
-    heroes: heroes?.length ? [heroes[0]] : [],
-    reason: "default",
+    heroes: heroes?.length ? heroes : [],
+    reason: "contentstack_personalize_or_default",
   };
 }
