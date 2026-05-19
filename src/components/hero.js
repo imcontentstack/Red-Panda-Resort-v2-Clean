@@ -143,19 +143,8 @@ console.log(
 const hasCampaignResolverData =
   Array.isArray(campaigns) && campaigns.length > 0;
 
-  const {
-    heroes: resolvedContent,
-    reason: campaignDecisionReason,
-  } = hasCampaignResolverData
-    ? resolveCampaignHero({
-        heroes: content,
-        campaigns,
-        lyticsUser,
-      })
-    : {
-        heroes: content,
-        reason: "uc1_existing_behaviour",
-      };
+const resolvedContent = content;
+const campaignDecisionReason = "personalize_raw_test";
 
   let positionClass = "";
   let headlineClass = "";
@@ -246,14 +235,7 @@ const hasCampaignResolverData =
             //
             // Each hero reads ONLY its own image — no cross-variant fallback.
             //
-            const defaultImageUrl = hero?.image_options?.image?.url || null;
-            const imageFile =
-              index === 0 &&
-              ready &&
-              personalizedImageUrl &&
-              !hasCampaignResolverData
-                ? personalizedImageUrl
-                : defaultImageUrl;
+            const imageFile = defaultImageUrl;
 
             // ───────────────────────────────────────────────────────────────
 
