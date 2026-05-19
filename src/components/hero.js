@@ -53,7 +53,12 @@ function usePersonalizedHeroImage() {
   const productName =
     lyticsUser?.latest_product_add_to_cart_item ||
     lyticsUser?.product_add_to_cart_item ||
+    lyticsUser?.add_to_basket?.[0] ||
+    lyticsUser?.product_name?.[0] ||
+    lyticsUser?.top_unpurchased_product ||
     null;
+
+  console.log("UC1 DAM lookup productName:", productName);
 
   const normalizedProductName = useMemo(
     () => normalizeValue(productName),
@@ -143,19 +148,8 @@ console.log(
 const hasCampaignResolverData =
   Array.isArray(campaigns) && campaigns.length > 0;
 
-  const {
-    heroes: resolvedContent,
-    reason: campaignDecisionReason,
-  } = hasCampaignResolverData
-    ? resolveCampaignHero({
-        heroes: content,
-        campaigns,
-        lyticsUser,
-      })
-    : {
-        heroes: content,
-        reason: "uc1_existing_behaviour",
-      };
+const resolvedContent = content;
+const campaignDecisionReason = "personalize_raw_test";
 
   let positionClass = "";
   let headlineClass = "";
@@ -246,12 +240,19 @@ const hasCampaignResolverData =
             //
             // Each hero reads ONLY its own image — no cross-variant fallback.
             //
+            
             const defaultImageUrl = hero?.image_options?.image?.url || null;
+
+            const allowUc1DamOverride =
+              campaignDecisionReason === "contentstack_personalize_or_default" ||
+              campaignDecisionReason === "uc1_existing_behaviour" ||
+              campaignDecisionReason === "personalize_raw_test";
+
             const imageFile =
               index === 0 &&
               ready &&
               personalizedImageUrl &&
-              !hasCampaignResolverData
+              allowUc1DamOverride
                 ? personalizedImageUrl
                 : defaultImageUrl;
 
@@ -274,14 +275,14 @@ const hasCampaignResolverData =
             // This prevents any flash of base image or text before the
             // personalised content is ready. The container is kept at the
             // correct dimensions so the page layout does not shift.
-            if (index === 0 && !ready) {
-              return (
-                <div
-                  key={index}
-                  className={`bg-black relative isolate overflow-hidden flex ${containerHeightClass}`}
-                />
-              );
-            }
+            // if (index === 0 && !ready) {
+            //  return (
+            //    <div
+            //      key={index}
+            //      className={`bg-black relative isolate overflow-hidden flex ${containerHeightClass}`}
+            //    />
+            //  );
+            //}
             // ───────────────────────────────────────────────────────────────
 
             return (
