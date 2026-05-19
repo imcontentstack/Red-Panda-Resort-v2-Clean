@@ -53,7 +53,12 @@ function usePersonalizedHeroImage() {
   const productName =
     lyticsUser?.latest_product_add_to_cart_item ||
     lyticsUser?.product_add_to_cart_item ||
+    lyticsUser?.add_to_basket?.[0] ||
+    lyticsUser?.product_name?.[0] ||
+    lyticsUser?.top_unpurchased_product ||
     null;
+
+  console.log("UC1 DAM lookup productName:", productName);
 
   const normalizedProductName = useMemo(
     () => normalizeValue(productName),
@@ -237,7 +242,19 @@ const campaignDecisionReason = "personalize_raw_test";
             //
             
             const defaultImageUrl = hero?.image_options?.image?.url || null;
-            const imageFile = defaultImageUrl;
+
+            const allowUc1DamOverride =
+              campaignDecisionReason === "contentstack_personalize_or_default" ||
+              campaignDecisionReason === "uc1_existing_behaviour" ||
+              campaignDecisionReason === "personalize_raw_test";
+
+            const imageFile =
+              index === 0 &&
+              ready &&
+              personalizedImageUrl &&
+              allowUc1DamOverride
+                ? personalizedImageUrl
+                : defaultImageUrl;
 
             // ───────────────────────────────────────────────────────────────
 
