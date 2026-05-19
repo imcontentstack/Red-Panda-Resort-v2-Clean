@@ -248,7 +248,10 @@ const hasCampaignResolverData =
             //
             const defaultImageUrl = hero?.image_options?.image?.url || null;
             const imageFile =
-              index === 0 && ready && personalizedImageUrl
+              index === 0 &&
+              ready &&
+              personalizedImageUrl &&
+              !hasCampaignResolverData
                 ? personalizedImageUrl
                 : defaultImageUrl;
 
