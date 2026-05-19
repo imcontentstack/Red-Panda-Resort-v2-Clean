@@ -275,14 +275,14 @@ const campaignDecisionReason = "personalize_raw_test";
             // This prevents any flash of base image or text before the
             // personalised content is ready. The container is kept at the
             // correct dimensions so the page layout does not shift.
-            if (index === 0 && !ready) {
-              return (
-                <div
-                  key={index}
-                  className={`bg-black relative isolate overflow-hidden flex ${containerHeightClass}`}
-                />
-              );
-            }
+            // if (index === 0 && !ready) {
+            //  return (
+            //    <div
+            //      key={index}
+            //      className={`bg-black relative isolate overflow-hidden flex ${containerHeightClass}`}
+            //    />
+            //  );
+            //}
             // ───────────────────────────────────────────────────────────────
 
             return (
