@@ -39,7 +39,7 @@ export default function Home() {
         "homepage",
         params.locale,
         homepageReferences,
-        initialData
+        null
       );
 
       const first = homepageEntry?.[0];
