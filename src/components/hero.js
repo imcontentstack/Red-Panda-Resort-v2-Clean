@@ -148,8 +148,19 @@ console.log(
 const hasCampaignResolverData =
   Array.isArray(campaigns) && campaigns.length > 0;
 
-const resolvedContent = content;
-const campaignDecisionReason = "personalize_raw_test";
+const {
+  heroes: resolvedContent,
+  reason: campaignDecisionReason,
+} = hasCampaignResolverData
+  ? resolveCampaignHero({
+      heroes: content,
+      campaigns,
+      lyticsUser,
+    })
+  : {
+      heroes: content,
+      reason: "uc1_existing_behaviour",
+    };
 
   let positionClass = "";
   let headlineClass = "";
