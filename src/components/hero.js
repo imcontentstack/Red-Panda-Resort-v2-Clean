@@ -235,6 +235,8 @@ const campaignDecisionReason = "personalize_raw_test";
             //
             // Each hero reads ONLY its own image — no cross-variant fallback.
             //
+            
+            const defaultImageUrl = hero?.image_options?.image?.url || null;
             const imageFile = defaultImageUrl;
 
             // ───────────────────────────────────────────────────────────────
