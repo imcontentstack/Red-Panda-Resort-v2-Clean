@@ -96,7 +96,9 @@ export async function GET(request) {
     // any title containing all three words in any order, regardless of what
     // separates them (spaces, dashes, em dashes, etc.)
     //
-    const wordPattern = targetWords.join("|");
+    const regexConditions = targetWords.map((word) => ({
+      title: { $regex: word, $options: "i" },
+    }));
 
     const assetsUrl = new URL(`https://${CONTENTSTACK_CDN_HOST}/v3/assets`);
     assetsUrl.searchParams.set("environment", CONTENTSTACK_ENVIRONMENT);
@@ -104,7 +106,7 @@ export async function GET(request) {
     assetsUrl.searchParams.set(
       "query",
       JSON.stringify({
-        title: { $regex: wordPattern, $options: "i" },
+        $and: regexConditions,
       })
     );
     assetsUrl.searchParams.set("include_dimension", "false");
