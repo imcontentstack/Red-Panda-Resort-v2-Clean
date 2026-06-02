@@ -89,10 +89,11 @@ export default function Home({ }) {
         data-locale={params.locale}
       >
         <Hero
-          content={entry?.hero}
+          content={entry?.hero_banner?.hero}
           locale={params.locale}
           withHeader={true}
-          cslp={entry?.$?.hero}
+          presentation={entry?.hero_banner?.presentation}
+          cslp={entry?.$?.hero_banner}
         />
         <div
           className={

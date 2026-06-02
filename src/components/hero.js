@@ -3,7 +3,7 @@ import Link from "next/link";
 import Header from "./header";
 import { motion } from "framer-motion";
 import { usePathname } from "next/navigation";
-export default function Hero({ content, locale, withHeader, cslp }) {
+export default function Hero({ content, locale, withHeader, cslp, presentation }) {
   const pathname = usePathname();
   if (!content || content?.length === 0) return <div></div>;
 
@@ -101,7 +101,7 @@ export default function Hero({ content, locale, withHeader, cslp }) {
                 ? "h-screen w-full"
                 : aspectRatioClass;
 
-            const isOption2 = hero?.presentation === "Option2";
+            const isOption2 = presentation === "Design 2";
             const textRight = hero?.alignment === "Right";
 
             if (isOption2) {
