@@ -101,6 +101,85 @@ export default function Hero({ content, locale, withHeader, cslp }) {
                 ? "h-screen w-full"
                 : aspectRatioClass;
 
+            const isOption2 = hero?.presentation === "Option2";
+            const textRight = hero?.alignment === "Right";
+
+            if (isOption2) {
+              return (
+                <div
+                  key={index}
+                  className={`flex flex-col ${textRight ? "md:flex-row-reverse" : "md:flex-row"} min-h-[480px] overflow-hidden`}
+                >
+                  {/* Text panel */}
+                  <div className={`flex flex-col justify-center flex-1 px-12 py-16 bg-white ${textRight ? "items-end text-right" : "items-start text-left"}`}>
+                    <motion.div
+                      variants={{
+                        hidden: { x: textRight ? 60 : -60, opacity: 0 },
+                        visible: {
+                          x: 0,
+                          opacity: 1,
+                          transition: { type: "spring", stiffness: 120, damping: 25 },
+                        },
+                      }}
+                      initial="hidden"
+                      animate="visible"
+                      className="max-w-lg"
+                    >
+                      <h1
+                        className="text-neutral-900 text-4xl font-bold leading-tight"
+                        {...hero?.$?.header}
+                      >
+                        {hero?.header}
+                      </h1>
+
+                      {hero?.body && (
+                        <p
+                          className="mt-6 text-neutral-600"
+                          style={{ fontSize: hero?.body_text_size || "16px" }}
+                          {...hero?.$?.body}
+                        >
+                          {hero?.body}
+                        </p>
+                      )}
+
+                      {hero?.button_text !== "" && hero?.page && (
+                        <div className={`mt-10 flex items-center gap-x-6 ${textRight ? "justify-end" : "justify-start"}`}>
+                          <Link
+                            href={(hero?.page?.length > 0 && hero?.page?.[0]?.url) ? hero?.page?.[0]?.url : "#"}
+                            className="rounded-md bg-neutral-900 px-8 py-4 text-md tracking-widest uppercase font-bold text-white shadow-sm hover:bg-neutral-700 transition-colors"
+                            {...hero?.$?.button_text}
+                          >
+                            {hero?.button_text}
+                          </Link>
+                        </div>
+                      )}
+                    </motion.div>
+                  </div>
+
+                  {/* Media panel */}
+                  <div className="relative flex-1 min-h-[320px] md:min-h-0 overflow-hidden">
+                    {videoFile ? (
+                      <video
+                        className="absolute inset-0 w-full h-full object-cover"
+                        autoPlay={videoControls === "Autoplay"}
+                        controls={videoControls === "Show Controls"}
+                        muted={videoControls === "Autoplay"}
+                        loop={videoControls === "Autoplay" ? true : videoControls === "Show Controls" ? videoLoop : false}
+                      >
+                        <source src={videoFile} />
+                      </video>
+                    ) : imageFile ? (
+                      <img
+                        className="absolute inset-0 w-full h-full object-cover"
+                        src={imageFile}
+                        {...hero?.$?.image_options?.image}
+                      />
+                    ) : null}
+                  </div>
+                </div>
+              );
+            }
+
             return (
               <div
                 key={index}
