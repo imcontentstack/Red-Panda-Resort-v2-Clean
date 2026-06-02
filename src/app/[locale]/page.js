@@ -89,7 +89,7 @@ export default function Home({ }) {
         data-locale={params.locale}
       >
         <Hero
-          content={entry?.hero_banner?.hero}
+          content={entry?.hero_banner?.hero || entry?.hero}
           locale={params.locale}
           withHeader={true}
           presentation={entry?.hero_banner?.presentation}

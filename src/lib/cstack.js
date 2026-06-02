@@ -36,7 +36,7 @@ const ContentstackServer = {
     return new Promise((resolve, reject) => {
       stack.contentType(type)
         .entry(id)
-        .addParams({ "include_applied_variants": "true" })
+        .addParams({ "include_applied_variants": "true", include_fallback: "true" })
         .variants(deserializeVariantIds(variantParam))
         .locale(locale ? locale : "en")
         .fetch()
@@ -60,9 +60,9 @@ const ContentstackServer = {
     return new Promise((resolve, reject) => {
       stack.contentType(type)
         .entry(id)
-        .addParams({ "include_applied_variants": "true" })
+        .addParams({ "include_applied_variants": "true", include_fallback: "true" })
         .variants(deserializeVariantIds(variantParam))
-        .includeReference(...references)
+        .addParams({ include: references })
         .locale(locale ? locale : "en")
         .fetch()
         .then(
@@ -89,7 +89,7 @@ const ContentstackServer = {
         .variants(deserializeVariantIds(variantParam))
         .query()
         .equalTo("url", url)
-        .addParams({ "include_applied_variants": "true" })
+        .addParams({ "include_applied_variants": "true", include_fallback: "true" })
         .find()
         .then(
           function success(data) {
@@ -111,10 +111,10 @@ getElementByUrlWithRefs(type, url, locale, references, live_preview, variantPara
    return new Promise((resolve, reject) => {
      stack.contentType(type)
        .entry()
-       .includeReference(...references)
+       .addParams({ include: references })
        .locale(locale ? locale : "en")
        .variants(deserializeVariantIds(variantParam))
-       .addParams({ "include_applied_variants": "true" })
+       .addParams({ "include_applied_variants": "true", include_fallback: "true" })
        .query({ "url": { $eq: url } })
        .find()
        .then(
@@ -138,7 +138,7 @@ getElementByUrlWithRefs(type, url, locale, references, live_preview, variantPara
         .entry()
         .locale(locale ? locale : "en")
         .variants(deserializeVariantIds(variantParam))
-        .addParams({ "include_applied_variants": "true" })
+        .addParams({ "include_applied_variants": "true", include_fallback: "true" })
         .find()
         .then(
           function success(data) {
@@ -160,10 +160,10 @@ getElementByUrlWithRefs(type, url, locale, references, live_preview, variantPara
     return new Promise((resolve, reject) => {
       stack.contentType(type)
         .entry()
-        .includeReference(...references)
+        .addParams({ include: references })
         .locale(locale ? locale : "en")
         .variants(deserializeVariantIds(variantParam))
-        .addParams({ "include_applied_variants": "true" })
+        .addParams({ "include_applied_variants": "true", include_fallback: "true" })
         .find()
         .then(
           function success(data) {
@@ -187,7 +187,7 @@ getElementByUrlWithRefs(type, url, locale, references, live_preview, variantPara
         .entry()
         .locale(locale ? locale : "en")
         .variants(deserializeVariantIds(variantParam))
-        .addParams({ "include_applied_variants": "true" })
+        .addParams({ "include_applied_variants": "true", include_fallback: "true" })
         .query({ "taxonomies.article": { $in: term } })
         .find()
         .then(
@@ -212,7 +212,7 @@ getElementByUrlWithRefs(type, url, locale, references, live_preview, variantPara
         .entry()
         .locale(locale ? locale : "en")
         .variants(deserializeVariantIds(variantParam))
-        .addParams({ "include_applied_variants": "true" })
+        .addParams({ "include_applied_variants": "true", include_fallback: "true" })
         .query({ "url": { $eq: url } })
         .find()
         .then(
@@ -237,7 +237,7 @@ getElementByUrlWithRefs(type, url, locale, references, live_preview, variantPara
         .entry()
         .locale(locale ? locale : "en")
         .variants(deserializeVariantIds(variantParam))
-        .addParams({ "include_applied_variants": "true" })
+        .addParams({ "include_applied_variants": "true", include_fallback: "true" })
         .query({ "url": { $eq:url } })
         .find()
         .then(
@@ -260,10 +260,10 @@ getElementByUrlWithRefs(type, url, locale, references, live_preview, variantPara
     return new Promise((resolve, reject) => {
       stack.contentType(type)
         .entry()
-        .includeReference(...references)
+        .addParams({ include: references })
         .locale(locale ? locale : "en")
         .variants(deserializeVariantIds(variantParam))
-        .addParams({ "include_applied_variants": "true" })
+        .addParams({ "include_applied_variants": "true", include_fallback: "true" })
         .query({ "taxonomies.locations": { $in: term } })
         .find()
         .then(

@@ -9,6 +9,17 @@ const fetchData = cache(async (locale) => {
   const headersList = await headers();
   const variantParam = headersList.get('x-personalize-variants');
   const data = await ContentstackServer.getElementByTypeWithRefs("homepage", locale, homepageReferences, {}, variantParam);
+
+  // hero entries are stored as unresolved references that include[] cannot resolve —
+  // fetch each one individually and substitute in place
+  const entry = data?.[0];
+  if (entry && Array.isArray(entry.hero) && entry.hero[0]?.uid && !entry.hero[0]?.header) {
+    const resolved = await Promise.all(
+      entry.hero.map(ref => ContentstackServer.getElement(ref.uid, 'hero_banner', locale, {}, variantParam))
+    );
+    entry.hero = resolved.filter(Boolean);
+  }
+
   return data;
 });
 

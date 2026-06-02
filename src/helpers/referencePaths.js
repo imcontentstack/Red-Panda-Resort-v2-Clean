@@ -1,9 +1,12 @@
 export const homepageReferences = [
     'modular_blocks.review.reference',
     'modular_blocks.image_grid.image.page',
+    'hero',
+    'hero.hero_banner',
     'hero_banner.hero',
     'modal',
     'modal.button_reference',
+    'hero.page',
     'hero_banner.hero.page',
     'modular_blocks.review.testimonials',
     'modular_blocks.review.testimonials.reviews.review',

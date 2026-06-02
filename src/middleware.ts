@@ -5,7 +5,7 @@ import { getRedirects } from './lib/redirects';
 
 const intlMiddleware = createMiddleware({
   // A list of all locales that are supported
-  locales: ['en', 'es', 'fr', 'de'],
+  locales: ['en', 'es', 'fr', 'de', 'en-it', 'en-us', 'en-in'],
 
   // Used when no locale matches
   defaultLocale: 'en',
