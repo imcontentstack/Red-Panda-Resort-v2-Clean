@@ -92,7 +92,7 @@ export default function Home({ }) {
           content={entry?.hero_banner?.hero || entry?.hero}
           locale={params.locale}
           withHeader={true}
-          presentation={entry?.hero_banner?.presentation}
+
           cslp={entry?.$?.hero_banner}
         />
         <div

@@ -158,6 +158,8 @@ export default function Page() {
                content={block.hero_banner.hero}
                locale={params.locale}
                withHeader={false}
+               textPosition={block.hero_banner.text_position}
+               alignment={block.hero_banner.alignment}
              />
            )}
 

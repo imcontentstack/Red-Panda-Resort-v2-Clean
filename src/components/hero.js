@@ -3,58 +3,53 @@ import Link from "next/link";
 import Header from "./header";
 import { motion } from "framer-motion";
 import { usePathname } from "next/navigation";
-export default function Hero({ content, locale, withHeader, cslp, presentation }) {
+export default function Hero({ content, locale, withHeader, cslp, textPosition, alignment }) {
   const pathname = usePathname();
   if (!content || content?.length === 0) return <div></div>;
+
+  const resolvedTextPosition = textPosition || content?.[0]?.text_position;
+  const resolvedAlignment = alignment || content?.[0]?.alignment;
 
   let positionClass = "";
   let headlineClass = "";
   let bodyClass = "";
   let buttonClass = "";
 
- 
-  if (content && content?.length > 0){
-    const c0 = content?.[0];
-    if (c0?.text_position === "Top Left") {
+  if (resolvedTextPosition === "Top Left") {
     positionClass = "top-16 left-16";
-    } else if (c0?.text_position === "Top Center") {
-      positionClass = "top-16 left-1/2 transform -translate-x-1/2 ";
-    } else if (c0?.text_position === "Top Right") {
-      positionClass = "top-16 right-16";
-    } else if (c0?.text_position === "Left") {
-      positionClass = "top-1/2 left-16 transform -translate-y-1/2";
-    } else if (c0?.text_position === "Center") {
-      positionClass =
-        "top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2";
-    } else if (c0?.text_position === "Right") {
-      positionClass = "top-1/2 right-16 transform -translate-y-1/2";
-      headlineClass = "text-right";
-      bodyClass = "text-right";
-      buttonClass = "justify-end";
-    } else if (c0?.text_position === "Bottom Left") {
-      positionClass = "bottom-16 left-16";
-    } else if (c0?.text_position === "Bottom Center") {
-      positionClass = "bottom-16 left-1/2 transform -translate-x-1/2";
-    } else if (c0?.text_position === "Bottom Right") {
-      positionClass = "bottom-16 right-16";
-    }
+  } else if (resolvedTextPosition === "Top Center") {
+    positionClass = "top-16 left-1/2 transform -translate-x-1/2 ";
+  } else if (resolvedTextPosition === "Top Right") {
+    positionClass = "top-16 right-16";
+  } else if (resolvedTextPosition === "Left") {
+    positionClass = "top-1/2 left-16 transform -translate-y-1/2";
+  } else if (resolvedTextPosition === "Center") {
+    positionClass = "top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2";
+  } else if (resolvedTextPosition === "Right") {
+    positionClass = "top-1/2 right-16 transform -translate-y-1/2";
+    headlineClass = "text-right";
+    bodyClass = "text-right";
+    buttonClass = "justify-end";
+  } else if (resolvedTextPosition === "Bottom Left") {
+    positionClass = "bottom-16 left-16";
+  } else if (resolvedTextPosition === "Bottom Center") {
+    positionClass = "bottom-16 left-1/2 transform -translate-x-1/2";
+  } else if (resolvedTextPosition === "Bottom Right") {
+    positionClass = "bottom-16 right-16";
   }
 
-  if (content && content?.length > 0){  
-    const c0 = content?.[0];
-    if (c0?.alignment === "Left") {
-      headlineClass = "text-left";
-      bodyClass = "text-left";
-      buttonClass = "justify-start";
-    } else if (c0?.alignment === "Center") {
-      headlineClass = "text-center";
-      bodyClass = "";
-      buttonClass = "justify-center";
-    } else if (c0?.alignment === "Right") {
-      headlineClass = "text-right";
-      bodyClass = "text-right";
-      buttonClass = "justify-end";
-    }
+  if (resolvedAlignment === "Left") {
+    headlineClass = "text-left";
+    bodyClass = "text-left";
+    buttonClass = "justify-start";
+  } else if (resolvedAlignment === "Center") {
+    headlineClass = "text-center";
+    bodyClass = "";
+    buttonClass = "justify-center";
+  } else if (resolvedAlignment === "Right") {
+    headlineClass = "text-right";
+    bodyClass = "text-right";
+    buttonClass = "justify-end";
   }
 
   if(content && content?.length) {  
@@ -101,8 +96,8 @@ export default function Hero({ content, locale, withHeader, cslp, presentation }
                 ? "h-screen w-full"
                 : aspectRatioClass;
 
-            const isOption2 = presentation === "Design 2";
-            const textRight = hero?.alignment === "Right";
+            const isOption2 = hero?.presentation === "Option2";
+            const textRight = resolvedAlignment === "Right";
 
             if (isOption2) {
               return (
