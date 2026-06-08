@@ -6,6 +6,19 @@ const withNextIntl = createNextIntlPlugin();
 const nextConfig: NextConfig = {
   reactStrictMode: false,
   devIndicators: false,
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: "frame-ancestors 'self' https://app.contentstack.com https://*.contentstack.com;",
+          },
+        ],
+      },
+    ];
+  },
     images: {
         remotePatterns: [
             {
