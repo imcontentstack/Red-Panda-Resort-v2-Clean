@@ -9,7 +9,7 @@ import { faCheck, faCircleUser as loggedIn, faCircleQuestion } from '@awesome.me
 import { faCircleUser as loggedOut } from '@awesome.me/kit-610837e1f9/icons/classic/thin';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Disclosure, Popover, PopoverButton, PopoverPanel, Transition } from '@headlessui/react';
-import { ChevronDownIcon } from '@heroicons/react/20/solid';
+import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/20/solid';
 import { Bars3Icon, XMarkIcon, Squares2X2Icon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -20,6 +20,141 @@ import { useSlidePanel } from '@/context/slidePanel.context';
 // Helper function to delete cookie
 function deleteCookie(name) {
   document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+}
+
+const toArray = (val) => !val ? [] : Array.isArray(val) ? val : [val];
+
+function MegaMenuItem({ item, index, entry }) {
+  const [activeSubIdx, setActiveSubIdx] = useState(null);
+  const [activeChildIdx, setActiveChildIdx] = useState(null);
+
+  if (item?.sub_items?.length > 0) {
+    const activeSubItem = activeSubIdx !== null ? item.sub_items[activeSubIdx] : null;
+    const activeChildItem = activeChildIdx !== null ? activeSubItem?.child_items?.[activeChildIdx] : null;
+
+    return (
+      <Popover className="relative px-5" {...cslp(entry, 'menu_items__', index)}>
+        <div {...item.$?.page}>
+          <PopoverButton className="font-paragraph flex items-center outline-none bg-transparent" {...item.$?.text}>
+            {item?.text}
+            <ChevronDownIcon className="h-5 w-5 flex-none" aria-hidden="true" />
+          </PopoverButton>
+        </div>
+        <Transition
+          as={Fragment}
+          enter="transition ease-out duration-200"
+          enterFrom="opacity-0 translate-y-1"
+          enterTo="opacity-100 translate-y-0"
+          leave="transition ease-in duration-150"
+          leaveFrom="opacity-100 translate-y-0"
+          leaveTo="opacity-0 translate-y-1"
+        >
+          <PopoverPanel
+            className="absolute top-full right-0 z-10 mt-3 overflow-hidden rounded-lg bg-[#f3f3f9] shadow-lg"
+            onMouseLeave={() => { setActiveSubIdx(null); setActiveChildIdx(null); }}
+          >
+            <div className="p-4 text-neutral-700 flex">
+              {/* Column 1: sub_items */}
+              <div className="flex flex-col gap-1 min-w-[180px]" {...item.$?.sub_items}>
+                {item.sub_items.map((sub, subIdx) => (
+                  sub?.child_items?.length > 0 ? (
+                    <div
+                      key={subIdx}
+                      onMouseEnter={() => { setActiveSubIdx(subIdx); setActiveChildIdx(null); }}
+                      className={`px-3 py-1.5 rounded-md cursor-default ${activeSubIdx === subIdx ? 'bg-white font-semibold' : 'font-light'}`}
+                      {...sub.$?.text}
+                    >
+                      {sub.text}
+                    </div>
+                  ) : (
+                    sub?.page && (
+                      <Link
+                        key={subIdx}
+                        href={sub?.page?.length > 0 ? sub?.page?.[0]?.url : "#"}
+                        className="px-3 py-1.5 rounded-md font-light hover:bg-white"
+                        {...sub.$?.text}
+                      >
+                        {sub.text}
+                      </Link>
+                    )
+                  )
+                ))}
+              </div>
+
+              {/* Column 2: child_items of hovered sub */}
+              {activeSubItem?.child_items?.length > 0 && (
+                <>
+                  <div className="w-px mx-3 bg-neutral-300 self-stretch" />
+                  <div className="flex flex-col gap-1 min-w-[180px]">
+                    {activeSubItem.child_items.map((child, childIdx) => (
+                      toArray(child?.sub_child_items).length > 0 ? (
+                        <div
+                          key={childIdx}
+                          onMouseEnter={() => setActiveChildIdx(childIdx)}
+                          className={`px-3 py-1.5 rounded-md cursor-default ${activeChildIdx === childIdx ? 'bg-white font-semibold' : 'font-light'}`}
+                          {...child.$?.text}
+                        >
+                          {child.text}
+                        </div>
+                      ) : (
+                        child?.page && (
+                          <Link
+                            key={childIdx}
+                            href={child?.page?.length > 0 ? child?.page?.[0]?.url : "#"}
+                            className="px-3 py-1.5 rounded-md font-light hover:bg-white"
+                            {...child.$?.text}
+                          >
+                            {child.text}
+                          </Link>
+                        )
+                      )
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Column 3: sub_child_items of hovered child */}
+              {toArray(activeChildItem?.sub_child_items).length > 0 && (
+                <>
+                  <div className="w-px mx-3 bg-neutral-300 self-stretch" />
+                  <div className="flex flex-col gap-1 min-w-[180px]">
+                    {toArray(activeChildItem.sub_child_items).map((subChild, subChildIdx) => (
+                      subChild?.text && (
+                        <Link
+                          key={subChildIdx}
+                          href={subChild?.page?.[0]?.url ?? "#"}
+                          className="px-3 py-1.5 font-light flex items-center justify-between hover:bg-white rounded-md"
+                          {...subChild.$?.text}
+                        >
+                          {subChild.text}
+                          <ChevronRightIcon className="h-4 w-4 flex-none text-neutral-400 ml-4" />
+                        </Link>
+                      )
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          </PopoverPanel>
+        </Transition>
+      </Popover>
+    );
+  }
+
+  return (
+    <div className="px-5" {...cslp(entry, 'menu_items__', index)}>
+      <div {...item.$?.page}>
+        {item?.page && (
+          <Link
+            href={(item?.page?.length > 0 && item?.page?.[0]?.url) ? item?.page?.[0]?.url : "#"}
+            {...item.$?.text}
+          >
+            {item.text}
+          </Link>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function Header({ color, locale }) {
@@ -101,6 +236,8 @@ export default function Header({ color, locale }) {
     const entry = await ContentstackClient.getElementByTypeWithRefs("header", locale, [
       "menu_items.page",
       "menu_items.sub_items.page",
+      "menu_items.sub_items.child_items.page",
+      "menu_items.sub_items.child_items.sub_child_items.page",
     ]);
     setEntry(entry?.[0] ?? {});
     setIsLoading(false);
@@ -201,67 +338,9 @@ export default function Header({ color, locale }) {
       </div>
 
       <div className="hidden gap-8 lg:flex " {...entry?.$?.menu_items}>
-        {(entry?.menu_items && entry?.menu_items?.length > 0) && (
-        entry?.menu_items?.map((item, index) => {
-          if (item?.sub_items?.length > 0) {
-            return (
-              <Popover key={index} className="relative px-5" {...cslp(entry, 'menu_items__', index)}>
-                <div {...item.$?.page}>
-                  <PopoverButton className=" font-paragraph flex items-center outline-none bg-transparent" {...item.$?.text}>
-                    {item?.text}
-                    <ChevronDownIcon
-                      className="h-5 w-5 flex-none"
-                      aria-hidden="true"
-                    />
-                  </PopoverButton>
-                </div>
-
-                <Transition
-                  as={Fragment}
-                  enter="transition ease-out duration-200"
-                  enterFrom="opacity-0 translate-y-1"
-                  enterTo="opacity-100 translate-y-0"
-                  leave="transition ease-in duration-150"
-                  leaveFrom="opacity-100 translate-y-0"
-                  leaveTo="opacity-0 translate-y-1"
-                >
-                  <PopoverPanel className="absolute top-full right-0 z-10 mt-3 overflow-hidden rounded-lg bg-[#f3f3f9] shadow-lg ">
-                    <div className="p-4 text-neutral-700 flex flex-col gap-2" {...item.$?.sub_items}>
-                      {(item?.sub_items && item?.sub_items?.length > 0) && (
-                      item.sub_items.map((sub, subIdx) => (
-                        sub?.page && (
-                        <Link
-                          key={subIdx}
-                          href={sub?.page?.length > 0 ? sub?.page?.[0]?.url : "#"}
-                          className="text-nowrap font-light"
-                          {...sub.$?.text}
-                        >
-                          {sub.text}
-                        </Link>
-                        )
-                      )))}
-                    </div>
-                  </PopoverPanel>
-                </Transition>
-              </Popover>
-            );
-          } else {
-            return (
-              <div key={index} className="px-5" {...cslp(entry, 'menu_items__', index)} >
-                <div {...item.$?.page}>
-                  {item?.page && (
-                  <Link
-                    href={(item?.page?.length > 0 && item?.page?.[0]?.url) ? item?.page?.[0]?.url : "#"}
-                    {...item.$?.text}
-                  >
-                    {item.text}
-                  </Link>
-                  )}
-                </div>
-              </div>
-            );
-          }
-        }))}
+        {entry?.menu_items?.map((item, index) => (
+          <MegaMenuItem key={index} item={item} index={index} entry={entry} />
+        ))}
       </div>
 
 
@@ -392,14 +471,70 @@ export default function Header({ color, locale }) {
                       </Disclosure.Button>
                       <Disclosure.Panel className="mt-2 space-y-2 pb-2 font-paragraph">
                         {item.sub_items.map((subItem, subIdx) => (
-                          <Disclosure.Button
-                            key={subIdx + subItem?.text}
-                            as="a"
-                            href={subItem?.page?.[0]?.url ?? "#"}
-                            className="block rounded-lg pt-2 pl-6 pr-3 text-sm font-semibold leading-7 text-gray-900 hover:bg-gray-50 font-paragraph"
-                          >
-                            {subItem?.text}
-                          </Disclosure.Button>
+                          subItem?.child_items?.length > 0 ? (
+                            <Disclosure as="div" key={subIdx + subItem?.text} className="-mx-0">
+                              {({ open }) => (
+                                <>
+                                  <Disclosure.Button className="flex w-full items-center pl-6 pr-3.5 text-sm uppercase font-paragraph">
+                                    {subItem.text}
+                                    <ChevronDownIcon
+                                      className={classNames(open ? "rotate-180" : "", "ml-2 h-5 w-5 flex-none")}
+                                      aria-hidden="true"
+                                    />
+                                  </Disclosure.Button>
+                                  <Disclosure.Panel className="mt-1 space-y-1 pb-1 font-paragraph">
+                                    {subItem.child_items.map((child, childIdx) => (
+                                      child?.sub_child_items?.length > 0 ? (
+                                        <Disclosure as="div" key={childIdx + child?.text} className="-mx-0">
+                                          {({ open }) => (
+                                            <>
+                                              <Disclosure.Button className="flex w-full items-center pl-9 pr-3.5 text-sm uppercase font-paragraph">
+                                                {child.text}
+                                                <ChevronDownIcon
+                                                  className={classNames(open ? "rotate-180" : "", "ml-2 h-5 w-5 flex-none")}
+                                                  aria-hidden="true"
+                                                />
+                                              </Disclosure.Button>
+                                              <Disclosure.Panel className="mt-1 space-y-1 pb-1 font-paragraph">
+                                                {child.sub_child_items.map((subChild, subChildIdx) => (
+                                                  <Disclosure.Button
+                                                    key={subChildIdx + subChild?.text}
+                                                    as="a"
+                                                    href={subChild?.page?.[0]?.url ?? "#"}
+                                                    className="block rounded-lg pt-2 pl-12 pr-3 text-sm font-semibold leading-7 text-gray-900 hover:bg-gray-50 font-paragraph"
+                                                  >
+                                                    {subChild?.text}
+                                                  </Disclosure.Button>
+                                                ))}
+                                              </Disclosure.Panel>
+                                            </>
+                                          )}
+                                        </Disclosure>
+                                      ) : (
+                                        <Disclosure.Button
+                                          key={childIdx + child?.text}
+                                          as="a"
+                                          href={child?.page?.[0]?.url ?? "#"}
+                                          className="block rounded-lg pt-2 pl-9 pr-3 text-sm font-semibold leading-7 text-gray-900 hover:bg-gray-50 font-paragraph"
+                                        >
+                                          {child?.text}
+                                        </Disclosure.Button>
+                                      )
+                                    ))}
+                                  </Disclosure.Panel>
+                                </>
+                              )}
+                            </Disclosure>
+                          ) : (
+                            <Disclosure.Button
+                              key={subIdx + subItem?.text}
+                              as="a"
+                              href={subItem?.page?.[0]?.url ?? "#"}
+                              className="block rounded-lg pt-2 pl-6 pr-3 text-sm font-semibold leading-7 text-gray-900 hover:bg-gray-50 font-paragraph"
+                            >
+                              {subItem?.text}
+                            </Disclosure.Button>
+                          )
                         ))}
                       </Disclosure.Panel>
                     </>
