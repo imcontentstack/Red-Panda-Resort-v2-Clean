@@ -178,7 +178,7 @@ export default function Hero({ content, locale, withHeader, cslp }) {
             }
 
             const mediaOpacity = hero?.media_overlay || "75%";
-            const imageFile = hero?.image_options?.image?.url || null;
+            const imageFile = demoHero?.image || hero?.image_options?.image?.url || null;
             const imageHeight = hero?.image_options?.image_height || "h-auto";
             const isScreenHeight = imageHeight === "h-screen";
 
