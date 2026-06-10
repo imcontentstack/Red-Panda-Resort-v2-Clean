@@ -11,46 +11,55 @@ const demoHeroExperiences = {
     header: "Plan your retirement with confidence",
     body: "Explore retirement-focused investment solutions tailored to UK individual investors.",
     button_text: "Explore Retirement Solutions",
+    image: "https://images.contentstack.io/v3/assets/blt336c04d12909ff8e/blte6432826c6c7cc49/6a2961d5da7c0ddbe6e1f9d4/retirement-Nightingale-Hall-Schroders-Senior-Housing-716x465.jpg",
   },
   "france-individual-retirement": {
     header: "Préparez votre retraite en toute confiance",
     body: "Découvrez des solutions d'investissement adaptées aux investisseurs particuliers en France.",
     button_text: "Explorer les solutions retraite",
+    image: "https://images.contentstack.io/v3/assets/blt336c04d12909ff8e/blt58b2d68423e474da/6a2967dd19783ab1b4e0b1e9/fr-retirement-Senior-Living-in-France-Better-Choices-for-a-Happy-Life.jpg",
   },
   "spain-individual-retirement": {
     header: "Planifica tu jubilación con confianza",
     body: "Descubre soluciones de inversión para inversores particulares en España.",
     button_text: "Explorar soluciones de jubilación",
+    image: "https://images.contentstack.io/v3/assets/blt336c04d12909ff8e/blt2884211e12948759/6a29954bab9a66d583c45670/es-retirement.jpg",
   },
   "uk-institutional-private_assets": {
     header: "Access global private market opportunities",
     body: "Institutional strategies across infrastructure, private equity and real assets.",
     button_text: "Explore Institutional Strategies",
+    image: "https://images.contentstack.io/v3/assets/YOUR_ASSET_ID/YOUR_ENV/YOUR_IMAGE.jpg",
   },
   "france-institutional-private_assets": {
     header: "Accédez aux opportunités des marchés privés mondiaux",
     body: "Des stratégies institutionnelles couvrant les infrastructures, le private equity et les actifs réels.",
     button_text: "Explorer les stratégies institutionnelles",
+    image: "https://images.contentstack.io/v3/assets/YOUR_ASSET_ID/YOUR_ENV/YOUR_IMAGE.jpg",
   },
   "spain-institutional-private_assets": {
     header: "Acceda a oportunidades globales en mercados privados",
     body: "Estrategias institucionales en infraestructuras, capital privado y activos reales.",
     button_text: "Explorar estrategias institucionales",
+    image: "https://images.contentstack.io/v3/assets/YOUR_ASSET_ID/YOUR_ENV/YOUR_IMAGE.jpg",
   },
   "uk-intermediary-model_portfolios": {
     header: "Scalable investment solutions for advisers",
     body: "Model portfolio solutions and market insights designed for UK intermediaries.",
     button_text: "Explore Adviser Solutions",
+    image: "https://images.contentstack.io/v3/assets/YOUR_ASSET_ID/YOUR_ENV/YOUR_IMAGE.jpg",
   },
   "france-intermediary-model_portfolios": {
     header: "Des solutions d'investissement évolutives pour les conseillers",
     body: "Portefeuilles modèles et analyses de marché conçus pour les intermédiaires en France.",
     button_text: "Explorer les solutions conseiller",
+    image: "https://images.contentstack.io/v3/assets/YOUR_ASSET_ID/YOUR_ENV/YOUR_IMAGE.jpg",
   },
   "spain-intermediary-model_portfolios": {
     header: "Soluciones de inversión escalables para asesores",
     body: "Carteras modelo e información de mercado para intermediarios en España.",
     button_text: "Explorar soluciones para asesores",
+    image: "https://images.contentstack.io/v3/assets/YOUR_ASSET_ID/YOUR_ENV/YOUR_IMAGE.jpg",
   },
 };
 
