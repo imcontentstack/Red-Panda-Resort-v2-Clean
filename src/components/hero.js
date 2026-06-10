@@ -29,19 +29,19 @@ const demoHeroExperiences = {
     header: "Access global private market opportunities",
     body: "Institutional strategies across infrastructure, private equity and real assets.",
     button_text: "Explore Institutional Strategies",
-    image: "https://images.contentstack.io/v3/assets/YOUR_ASSET_ID/YOUR_ENV/YOUR_IMAGE.jpg",
+    image: "https://images.contentstack.io/v3/assets/blt336c04d12909ff8e/bltbfcb35eeb5df4b48/6a26e66066413cd331f85dbf/Institutional.jpg",
   },
   "france-institutional-private_assets": {
     header: "Accédez aux opportunités des marchés privés mondiaux",
     body: "Des stratégies institutionnelles couvrant les infrastructures, le private equity et les actifs réels.",
     button_text: "Explorer les stratégies institutionnelles",
-    image: "https://images.contentstack.io/v3/assets/YOUR_ASSET_ID/YOUR_ENV/YOUR_IMAGE.jpg",
+    image: "https://images.contentstack.io/v3/assets/blt336c04d12909ff8e/bltbfcb35eeb5df4b48/6a26e66066413cd331f85dbf/Institutional.jpg",
   },
   "spain-institutional-private_assets": {
     header: "Acceda a oportunidades globales en mercados privados",
     body: "Estrategias institucionales en infraestructuras, capital privado y activos reales.",
     button_text: "Explorar estrategias institucionales",
-    image: "https://images.contentstack.io/v3/assets/YOUR_ASSET_ID/YOUR_ENV/YOUR_IMAGE.jpg",
+    image: "https://images.contentstack.io/v3/assets/blt336c04d12909ff8e/bltbfcb35eeb5df4b48/6a26e66066413cd331f85dbf/Institutional.jpg",
   },
   "uk-intermediary-model_portfolios": {
     header: "Scalable investment solutions for advisers",
