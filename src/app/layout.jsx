@@ -3,6 +3,7 @@ import "./globals.css";
 import Script from 'next/script';
 import { LyticsTracking } from "@/context/lyticsTracking";
 import AppWrapper from "@/components/appWrapper";
+import { DemoContextSwitcher } from "@/components/DemoContextSwitcher";
 import {
   Cinzel,
   Cormorant,
@@ -185,6 +186,7 @@ export default async function RootLayout({
         {process.env.LYTICS_TAG && <LyticsTracking />}
         <AppWrapper>
           {children}
+          <DemoContextSwitcher />
         </AppWrapper>
       </body>
     </html>
