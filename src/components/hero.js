@@ -59,7 +59,7 @@ const demoHeroExperiences = {
     header: "Soluciones de inversión escalables para asesores",
     body: "Carteras modelo e información de mercado para intermediarios en España.",
     button_text: "Explorar soluciones para asesores",
-    image: "https://images.contentstack.io/v3/assets/YOUR_ASSET_ID/YOUR_ENV/YOUR_IMAGE.jpg",
+    image: "https://images.contentstack.io/v3/assets/blt336c04d12909ff8e/blta9299274a3982de0/6a2aaa68e75dac10a05140ee/Gemini_Generated_Image_zckf8bzckf8bzckf.png",
   },
 };
 
