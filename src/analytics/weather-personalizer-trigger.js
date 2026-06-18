@@ -1,4 +1,4 @@
-```javascript
+javascript
 // Client-side pattern:
 // - Trigger AgentOS Weather Personalizer on the FIRST page load only
 // - Don’t run again for 24 hours (per browser)
@@ -54,4 +54,3 @@ async function runWeatherPersonalizerOncePerDay() {
 
 // Call on every page load; it will only trigger once per 24 hours.
 runWeatherPersonalizerOncePerDay();
-```
