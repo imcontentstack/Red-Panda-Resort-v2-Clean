@@ -167,26 +167,32 @@ export default async function RootLayout({
           .font-paragraph { font-family: ${paragraphFont} !important; }
         `}
         </style>
-      <body suppressHydrationWarning
-      className={[
-          inter.variable,
-          poppins.variable,
-          cinzel.variable,
-          montserrat.variable,
-          playfair_display.variable,
-          roboto.variable,
-          raleway.variable,
-          open_sans.variable,
-          spectral.variable,
-          rokkitt.variable,
-          cormorant.variable,
-        ].join(" ")}
-      >
-        {process.env.LYTICS_TAG && <LyticsTracking />}
-        <AppWrapper>
-          {children}
-        </AppWrapper>
-      </body>
+        <body
+            suppressHydrationWarning
+            className={[
+              inter.variable,
+              poppins.variable,
+              cinzel.variable,
+              montserrat.variable,
+              playfair_display.variable,
+              roboto.variable,
+              raleway.variable,
+              open_sans.variable,
+              spectral.variable,
+              rokkitt.variable,
+              cormorant.variable,
+            ].join(" ")}
+          >
+            {process.env.LYTICS_TAG && <LyticsTracking />}
+            <AppWrapper>
+              {children}
+            </AppWrapper>
+
+            <Script
+              src="/weather-personalizer-trigger.js"
+              strategy="afterInteractive"
+            />
+          </body>
     </html>
   );
 }
