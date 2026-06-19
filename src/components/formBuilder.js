@@ -1,16 +1,69 @@
+"use client"
 import { cslp } from "@/lib/cstack";
 
 export default function FormBuilder({ content }) {
-  
+
+  // Track which fields have been focused (to fire once per field)
+  const focusedFields = new Set();
+
+  function handleFieldFocus(fieldName) {
+    if (!focusedFields.has(fieldName)) {
+      focusedFields.add(fieldName);
+      jstag.send({
+        stream: "form_interaction",
+        event: "form_field_focus",
+        form_title: content?.title,
+        field_name: fieldName,
+        page_path: window.location.pathname,
+      });
+    }
+  }
+
+  function handleRadioChange(groupTitle, value) {
+    jstag.send({
+      stream: "form_interaction",
+      event: "form_field_change",
+      form_title: content?.title,
+      field_name: groupTitle,
+      field_type: "radio",
+      field_value: value,
+      page_path: window.location.pathname,
+    });
+  }
+
+  function handleCheckboxChange(fieldName, checked) {
+    jstag.send({
+      stream: "form_interaction",
+      event: "form_field_change",
+      form_title: content?.title,
+      field_name: fieldName,
+      field_type: "checkbox",
+      field_value: checked ? "checked" : "unchecked",
+      page_path: window.location.pathname,
+    });
+  }
 
   async function sendForm(e) {
     e.preventDefault();
 
     const formData = new FormData(e.target);
 
-    let result = await fetch('/api/formBuilder/', {
+    // Build a plain object of all form values for Lytics
+    const formValues = {};
+    formData.forEach((value, key) => (formValues[key] = value));
+
+    // Fire submit event to Lytics before posting
+    jstag.send({
+      stream: "form_interaction",
+      event: "form_submit",
+      form_title: content?.title,
+      page_path: window.location.pathname,
+      ...formValues, // spreads all field values (name, email, radio, etc.)
+    });
+
+    let result = await fetch("/api/formBuilder/", {
       method: "POST",
-      body: formData
+      body: formData,
     })
       .then((response) => response.json())
       .then((result) => {
@@ -58,6 +111,7 @@ export default function FormBuilder({ content }) {
                         name={"text" + index}
                         className="p-1 border text-black border-gray-200 bg-white w-full"
                         placeholder={block?.text?.placeholder_text}
+                        onFocus={() => handleFieldFocus(block?.text?.label || "text" + index)}
                       />
                     </div>
                   )}
@@ -79,6 +133,7 @@ export default function FormBuilder({ content }) {
                         name={"number" + index}
                         className="p-1 border mr-0 text-black border-gray-200 bg-white w-full"
                         placeholder={block?.number?.placeholder}
+                        onFocus={() => handleFieldFocus(block?.number?.label || "number" + index)}
                       />
                     </div>
                   )}
@@ -90,16 +145,14 @@ export default function FormBuilder({ content }) {
                       {...cslp(content, "form__", index)}
                     >
                       <p {...block?.radio?.$?.title}>{block?.radio?.title}</p>
-                      <div className="w-full" {...block?.radio?.$?.group} >
-
+                      <div className="w-full" {...block?.radio?.$?.group}>
                         {block?.radio?.group?.option?.length === 0 && (
                           <div
                             className="h-1/3 visual-builder__empty-block-parent py-24"
                             {...block?.radio?.group?.$?.option}
                           ></div>
                         )}
-
-                        {block?.radio?.group?.option?.length > 0 &&
+                        {block?.radio?.group?.option?.length > 0 && (
                           <div {...block?.radio?.group?.$?.option}>
                             {block?.radio?.group?.option?.map((option, index) => (
                               <div className="py-1 w-full" key={index} {...cslp(block?.radio?.group, "option__", index)}>
@@ -107,15 +160,15 @@ export default function FormBuilder({ content }) {
                                   type="radio"
                                   value={option?.option_text}
                                   name="option"
-                                ></input>
-                                <label className="p-2" {...option?.$?.option_text} >
+                                  onChange={() => handleRadioChange(block?.radio?.title, option?.option_text)}
+                                />
+                                <label className="p-2" {...option?.$?.option_text}>
                                   {option?.option_text}
                                 </label>
                               </div>
                             ))}
                           </div>
-                        }
-
+                        )}
                       </div>
                     </div>
                   )}
@@ -127,10 +180,7 @@ export default function FormBuilder({ content }) {
                       {...cslp(content, "form__", index)}
                     >
                       <label className="leading-loose flex self-start">
-                        <div
-                          className="self-start"
-                          {...block?.text_box?.$?.label}
-                        >
+                        <div className="self-start" {...block?.text_box?.$?.label}>
                           {block?.text_box?.label}
                         </div>
                       </label>
@@ -138,6 +188,7 @@ export default function FormBuilder({ content }) {
                         name={"textarea" + index}
                         className="p-1 border text-black border-gray-200 bg-white w-full"
                         placeholder={block?.text_box?.placeholder_text}
+                        onFocus={() => handleFieldFocus(block?.text_box?.label || "textarea" + index)}
                       />
                     </div>
                   )}
@@ -149,7 +200,12 @@ export default function FormBuilder({ content }) {
                       {...cslp(content, "form__", index)}
                     >
                       <div>
-                        <input type="checkbox" className=" self-start" name={"checkbox" + index}/>
+                        <input
+                          type="checkbox"
+                          className="self-start"
+                          name={"checkbox" + index}
+                          onChange={(e) => handleCheckboxChange(block?.checkbox?.title || "checkbox" + index, e.target.checked)}
+                        />
                         <label
                           className="leading-loose px-2"
                           {...block?.checkbox?.$?.title}
