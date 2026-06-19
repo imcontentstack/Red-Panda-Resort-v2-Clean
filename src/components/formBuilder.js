@@ -10,7 +10,6 @@ export default function FormBuilder({ content }) {
     if (!focusedFields.has(fieldName)) {
       focusedFields.add(fieldName);
       jstag.send({
-        stream: "form_interaction",
         event: "form_field_focus",
         form_title: content?.title,
         field_name: fieldName,
@@ -21,7 +20,6 @@ export default function FormBuilder({ content }) {
 
   function handleRadioChange(groupTitle, value) {
     jstag.send({
-      stream: "form_interaction",
       event: "form_field_change",
       form_title: content?.title,
       field_name: groupTitle,
@@ -33,7 +31,6 @@ export default function FormBuilder({ content }) {
 
   function handleCheckboxChange(fieldName, checked) {
     jstag.send({
-      stream: "form_interaction",
       event: "form_field_change",
       form_title: content?.title,
       field_name: fieldName,
@@ -54,7 +51,6 @@ export default function FormBuilder({ content }) {
 
     // Fire submit event to Lytics before posting
     jstag.send({
-      stream: "form_interaction",
       event: "form_submit",
       form_title: content?.title,
       page_path: window.location.pathname,
