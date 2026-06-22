@@ -131,13 +131,10 @@ function buildPayload(data: WeatherApiResponse): WeatherPayload {
 //  }
 //}
 
-async function upsertLyticsProfileBySeerid(seerid: string, payload: WeatherPayload): Promise<void> {
+async function upsertLyticsProfileBySeerid(seerid: string, payload: WeatherPayload) {
   const url = `https://api.lytics.io/v2/attributes/user/_uids/${encodeURIComponent(seerid)}`
 
   const body = JSON.stringify(payload)
-
-  console.log('[weather] Attribute PATCH URL:', url)
-  console.log('[weather] Attribute PATCH body:', body)
 
   const res = await fetch(url, {
     method: 'PATCH',
@@ -149,10 +146,14 @@ async function upsertLyticsProfileBySeerid(seerid: string, payload: WeatherPaylo
   })
 
   const responseText = await res.text()
-  console.log(`[weather] Lytics attribute PATCH response: ${res.status}`, responseText)
 
-  if (!res.ok) {
-    throw new Error(`Lytics attribute PATCH failed: ${res.status} ${responseText}`)
+  console.log('[weather] Lytics PATCH status:', res.status)
+  console.log('[weather] Lytics PATCH response:', responseText)
+
+  return {
+    ok: res.ok,
+    status: res.status,
+    response: responseText,
   }
 }
 
@@ -180,7 +181,7 @@ export async function GET(req: NextRequest) {
   const payload = buildPayload(weatherData)
 
   //upsertLyticsProfileBySeerid(seerid, payload).catch(console.error)
-  await upsertLyticsProfileBySeerid(seerid, payload)
+  const lyticsResult = await upsertLyticsProfileBySeerid(seerid, payload)
 
   return NextResponse.json({
     summary:
@@ -190,6 +191,12 @@ export async function GET(req: NextRequest) {
       + `humidity ${payload.weather_humidity}%, `
       + `wind ${payload.weather_wind_kph} km/h ${payload.weather_wind_dir}.`,
     data: payload,
-    meta: { seerid, city_source: 'lytics_profile', lytics_upsert: 'completed' },
+    meta: {
+        seerid,
+        city_source: 'lytics_profile',
+        lytics_upsert: lyticsResult.ok ? 'completed' : 'failed',
+        lytics_status: lyticsResult.status,
+        lytics_response: lyticsResult.response,
+        },
   })
 }
