@@ -10,7 +10,7 @@
  * Environment variables:
  *   WEATHERAPI_KEY        - WeatherAPI.com API key
  *   LYTICS_API_KEY        - Lytics account API key
- *   LYTICS_ACCOUNT_ID     - Lytics numeric account ID
+ *   LYTICS_TAG            - Lytics numeric account ID
  *   LYTICS_WEATHER_STREAM - Lytics stream to write into (default: "weather_enrichment")
  *   AGENT_SECRET          - Shared secret to authenticate AgentOS tool calls
  */
@@ -107,7 +107,7 @@ async function writeLyticsWeatherAsync(
   identifierValue: string,
   payload: WeatherPayload,
 ): Promise<void> {
-  const accountId = process.env.LYTICS_ACCOUNT_ID
+  const accountId = process.env.LYTICS_TAG
   const apiKey    = process.env.LYTICS_API_KEY
   const stream    = process.env.LYTICS_WEATHER_STREAM ?? 'weather_enrichment'
 
