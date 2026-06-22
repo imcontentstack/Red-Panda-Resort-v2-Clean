@@ -70,18 +70,35 @@ function buildPayload(data: WeatherApiResponse): WeatherPayload {
   }
 }
 
+//async function upsertLyticsProfileBySeerid(seerid: string, payload: WeatherPayload): Promise<void> {
+//  const url = `https://api.lytics.io/collect/json/${process.env.LYTICS_TAG}/default?access_token=${process.env.LYTICS_API_KEY}`
+//  const res = await fetch(url, {
+//    method: 'POST',
+//    headers: { 'Content-Type': 'application/json' },
+//    body: JSON.stringify({ _uid: seerid, ...payload }),
+//  })
+//  if (!res.ok) {
+//    console.error(`[weather] Lytics upsert failed: ${res.status} ${await res.text()}`)
+//  } else {
+//    console.log(`[weather] Lytics upsert OK — seerid=${seerid}`)
+//  }
+//}
+
 async function upsertLyticsProfileBySeerid(seerid: string, payload: WeatherPayload): Promise<void> {
   const url = `https://api.lytics.io/collect/json/${process.env.LYTICS_TAG}/default?access_token=${process.env.LYTICS_API_KEY}`
+  
+  const body = JSON.stringify({ _uid: seerid, ...payload })
+  console.log('[weather] Upsert URL:', url)
+  console.log('[weather] Upsert body:', body)
+
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ _uid: seerid, ...payload }),
+    body,
   })
-  if (!res.ok) {
-    console.error(`[weather] Lytics upsert failed: ${res.status} ${await res.text()}`)
-  } else {
-    console.log(`[weather] Lytics upsert OK — seerid=${seerid}`)
-  }
+
+  const responseText = await res.text()
+  console.log(`[weather] Lytics upsert response: ${res.status}`, responseText)
 }
 
 export async function GET(req: NextRequest) {
@@ -107,7 +124,8 @@ export async function GET(req: NextRequest) {
 
   const payload = buildPayload(weatherData)
 
-  upsertLyticsProfileBySeerid(seerid, payload).catch(console.error)
+  //upsertLyticsProfileBySeerid(seerid, payload).catch(console.error)
+  await upsertLyticsProfileBySeerid(seerid, payload)
 
   return NextResponse.json({
     summary:
