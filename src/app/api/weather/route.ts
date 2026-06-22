@@ -49,7 +49,7 @@ interface WeatherApiResponse {
 
 async function getCityFromLytics(seerid: string): Promise<string | null> {
   const apiKey = process.env.LYTICS_API_KEY
-  const url = `https://api.lytics.io/api/entity/user/_uid/${encodeURIComponent(seerid)}?key=${apiKey}`
+  const url = `https://api.lytics.io/api/entity/user/_uids/${encodeURIComponent(seerid)}?key=${apiKey}`
 
   const res = await fetch(url, { next: { revalidate: 0 } })
   if (!res.ok) {
