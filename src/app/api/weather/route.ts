@@ -85,20 +85,28 @@ function buildPayload(data: WeatherApiResponse): WeatherPayload {
 //}
 
 async function upsertLyticsProfileBySeerid(seerid: string, payload: WeatherPayload): Promise<void> {
-  const url = `https://api.lytics.io/collect/json/${process.env.LYTICS_TAG}/default?access_token=${process.env.LYTICS_API_KEY}`
-  
-  const body = JSON.stringify({ _uid: seerid, ...payload })
-  console.log('[weather] Upsert URL:', url)
-  console.log('[weather] Upsert body:', body)
+  const url = `https://api.lytics.io/v2/attributes/user/_uids/${encodeURIComponent(seerid)}`
+
+  const body = JSON.stringify(payload)
+
+  console.log('[weather] Attribute PATCH URL:', url)
+  console.log('[weather] Attribute PATCH body:', body)
 
   const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: 'PATCH',
+    headers: {
+      Authorization: process.env.LYTICS_API_KEY!,
+      'Content-Type': 'application/json',
+    },
     body,
   })
 
   const responseText = await res.text()
-  console.log(`[weather] Lytics upsert response: ${res.status}`, responseText)
+  console.log(`[weather] Lytics attribute PATCH response: ${res.status}`, responseText)
+
+  if (!res.ok) {
+    throw new Error(`Lytics attribute PATCH failed: ${res.status} ${responseText}`)
+  }
 }
 
 export async function GET(req: NextRequest) {
@@ -135,6 +143,6 @@ export async function GET(req: NextRequest) {
       + `humidity ${payload.weather_humidity}%, `
       + `wind ${payload.weather_wind_kph} km/h ${payload.weather_wind_dir}.`,
     data: payload,
-    meta: { seerid, city_source: 'lytics_profile', lytics_upsert: 'dispatched' },
+    meta: { seerid, city_source: 'lytics_profile', lytics_upsert: 'completed' },
   })
 }
