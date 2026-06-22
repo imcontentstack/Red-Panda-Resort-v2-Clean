@@ -14,6 +14,9 @@ interface WeatherPayload {
   weather_is_day: boolean
   weather_uv_index: number
   weather_updated_at: string
+  weather_segment: string
+  weather_mood: string
+  weather_hero_variant: string
 }
 
 interface WeatherApiResponse {
@@ -51,8 +54,50 @@ async function fetchWeather(city: string): Promise<WeatherApiResponse> {
   return res.json()
 }
 
+function deriveWeatherFields(condition: string, tempC: number) {
+  const normalized = condition.toLowerCase()
+
+  let weather_segment = 'mild_default'
+  let weather_mood = 'neutral'
+  let weather_hero_variant = 'default'
+
+  if (normalized.includes('snow') || normalized.includes('sleet') || normalized.includes('ice')) {
+    weather_segment = 'snowy'
+    weather_mood = 'winter'
+    weather_hero_variant = 'ski_escape'
+  } else if (normalized.includes('rain') || normalized.includes('drizzle') || normalized.includes('shower')) {
+    weather_segment = tempC <= 8 ? 'cold_rainy' : 'rainy'
+    weather_mood = 'cosy'
+    weather_hero_variant = 'spa_retreat'
+  } else if (normalized.includes('sunny') || normalized.includes('clear')) {
+    weather_segment = tempC >= 24 ? 'hot_sunny' : 'sunny'
+    weather_mood = tempC >= 24 ? 'summer' : 'bright'
+    weather_hero_variant = tempC >= 24 ? 'beach_escape' : 'outdoor_escape'
+  } else if (normalized.includes('cloud') || normalized.includes('overcast')) {
+    weather_segment = 'cloudy'
+    weather_mood = 'calm'
+    weather_hero_variant = 'city_break'
+  } else if (tempC >= 28) {
+    weather_segment = 'hot'
+    weather_mood = 'summer'
+    weather_hero_variant = 'beach_escape'
+  } else if (tempC <= 5) {
+    weather_segment = 'cold'
+    weather_mood = 'winter'
+    weather_hero_variant = 'winter_sun'
+  }
+
+  return {
+    weather_segment,
+    weather_mood,
+    weather_hero_variant,
+  }
+}
+
 function buildPayload(data: WeatherApiResponse): WeatherPayload {
   const { location, current } = data
+  const derived = deriveWeatherFields(current.condition.text, current.temp_c)
+
   return {
     weather_city:           location.name,
     weather_country:        location.country,
@@ -67,6 +112,8 @@ function buildPayload(data: WeatherApiResponse): WeatherPayload {
     weather_is_day:         current.is_day === 1,
     weather_uv_index:       current.uv,
     weather_updated_at:     new Date().toISOString(),
+
+    ...derived,
   }
 }
 
