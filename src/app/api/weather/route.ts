@@ -2,17 +2,18 @@
  * Weather enrichment Route Handler
  * app/api/weather/route.ts
  *
- * Registered as an AgentOS tool. Accepts a city and an optional Lytics
- * identifier, fetches live weather from WeatherAPI.com, and asynchronously
- * writes the result back to the Lytics profile so the data persists for
- * segmentation without blocking the agent response.
+ * Fetches live weather from WeatherAPI.com and upserts the result onto the
+ * visitor's *existing* Lytics profile using their seerid as the identity anchor,
+ * writing into the default "web" stream so no new profile or stream is created.
+ *
+ * Called by AgentOS as a tool. The agent resolves the visitor's seerid from
+ * the Lytics profile context and passes it as a query parameter.
  *
  * Environment variables:
- *   WEATHERAPI_KEY        - WeatherAPI.com API key
- *   LYTICS_API_KEY        - Lytics account API key
- *   LYTICS_TAG            - Lytics numeric account ID
- *   LYTICS_WEATHER_STREAM - Lytics stream to write into (default: "weather_enrichment")
- *   AGENT_SECRET          - Shared secret to authenticate AgentOS tool calls
+ *   WEATHERAPI_KEY     - WeatherAPI.com API key
+ *   LYTICS_API_KEY     - Lytics account API key
+ *   LYTICS_TAG         - Lytics account ID (numeric — reuses existing env var)
+ *   AGENT_SECRET       - Shared secret to authenticate AgentOS tool calls
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -41,7 +42,6 @@ interface WeatherApiResponse {
   location: {
     name: string
     country: string
-    localtime: string
   }
   current: {
     condition: { text: string; code: number }
@@ -57,7 +57,7 @@ interface WeatherApiResponse {
 }
 
 // ---------------------------------------------------------------------------
-// Helpers
+// WeatherAPI fetch
 // ---------------------------------------------------------------------------
 
 async function fetchWeather(city: string): Promise<WeatherApiResponse> {
@@ -67,12 +67,12 @@ async function fetchWeather(city: string): Promise<WeatherApiResponse> {
   url.searchParams.set('aqi', 'no')
 
   const res = await fetch(url.toString(), {
-    next: { revalidate: 0 }, // always fresh — no Next.js caching
+    next: { revalidate: 0 }, // always bypass Next.js cache — weather must be live
   })
 
   if (!res.ok) {
     const body = await res.text()
-    throw new Error(`WeatherAPI error ${res.status}: ${body}`)
+    throw new Error(`WeatherAPI ${res.status}: ${body}`)
   }
 
   return res.json()
@@ -97,24 +97,28 @@ function buildPayload(data: WeatherApiResponse): WeatherPayload {
   }
 }
 
-/**
- * Fire-and-forget Lytics Track API write.
- * Uses the Collect JSON endpoint — identity is anchored by the same field
- * used to look up the profile so Lytics merges rather than creates.
- */
-async function writeLyticsWeatherAsync(
-  identifierField: string,
-  identifierValue: string,
+// ---------------------------------------------------------------------------
+// Lytics upsert via default (web) stream using seerid
+//
+// Writing to the "default" stream with _seerid as the identity anchor tells
+// Lytics to resolve and patch the *existing* profile rather than creating a
+// new one or routing through a secondary stream. This is the correct approach
+// when you have the canonical visitor identifier and want an in-place upsert.
+// ---------------------------------------------------------------------------
+
+async function upsertLyticsProfileBySeerid(
+  seerid: string,
   payload: WeatherPayload,
 ): Promise<void> {
   const accountId = process.env.LYTICS_TAG
   const apiKey    = process.env.LYTICS_API_KEY
-  const stream    = process.env.LYTICS_WEATHER_STREAM ?? 'weather_enrichment'
 
-  const url = `https://api.lytics.io/collect/json/${accountId}/${stream}?access_token=${apiKey}`
+  // "default" is the Lytics web stream — writing here keeps everything on the
+  // same profile that jstag built client-side.
+  const url = `https://api.lytics.io/collect/json/${accountId}/default?access_token=${apiKey}`
 
   const body = {
-    [identifierField]: identifierValue,
+    _seerid: seerid,   // canonical Lytics visitor identifier — anchors to existing profile
     ...payload,
   }
 
@@ -125,10 +129,11 @@ async function writeLyticsWeatherAsync(
   })
 
   if (!res.ok) {
-    // Log but don't surface — this is async and must not affect the agent response
-    console.error(`Lytics write-back failed: ${res.status} ${await res.text()}`)
+    console.error(
+      `[weather] Lytics upsert failed for seerid=${seerid}: ${res.status} ${await res.text()}`
+    )
   } else {
-    console.log(`Lytics weather write-back OK for ${identifierField}=${identifierValue}`)
+    console.log(`[weather] Lytics upsert OK — seerid=${seerid} stream=default`)
   }
 }
 
@@ -138,8 +143,6 @@ async function writeLyticsWeatherAsync(
 
 export async function GET(req: NextRequest) {
   // -- Auth -----------------------------------------------------------------
-  // AgentOS passes the shared secret as a Bearer token.
-  // Remove this block if your AgentOS setup handles auth at the gateway level.
   const authHeader = req.headers.get('authorization') ?? ''
   const secret = process.env.AGENT_SECRET
 
@@ -158,10 +161,9 @@ export async function GET(req: NextRequest) {
     )
   }
 
-  // Optional Lytics identity for write-back.
-  // AgentOS should pass whichever identifier it resolved from the profile.
-  const lyticsField = searchParams.get('lytics_field') ?? 'email'  // field name
-  const lyticsValue = searchParams.get('lytics_value')              // field value
+  // seerid is the canonical Lytics visitor ID — resolved by AgentOS from the
+  // visitor profile context and passed here so we can upsert the right profile.
+  const seerid = searchParams.get('seerid')?.trim()
 
   // -- Fetch weather --------------------------------------------------------
   let weatherData: WeatherApiResponse
@@ -169,7 +171,7 @@ export async function GET(req: NextRequest) {
     weatherData = await fetchWeather(city)
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error'
-    console.error('WeatherAPI fetch failed:', message)
+    console.error('[weather] WeatherAPI fetch failed:', message)
     return NextResponse.json(
       { error: `Failed to fetch weather: ${message}` },
       { status: 502 },
@@ -178,20 +180,30 @@ export async function GET(req: NextRequest) {
 
   const payload = buildPayload(weatherData)
 
-  // -- Async Lytics write-back (fire-and-forget) ----------------------------
-  if (lyticsValue) {
-    // Do NOT await — the agent gets its response immediately
-    writeLyticsWeatherAsync(lyticsField, lyticsValue, payload).catch(console.error)
+  // -- Upsert Lytics profile (fire-and-forget) ------------------------------
+  // We do NOT await — the agent gets its response at WeatherAPI latency (~150ms)
+  // and the Lytics upsert runs in the background.
+  //
+  // Note: on Contentstack Launch / Vercel edge you may want to wrap this in
+  // waitUntil() to guarantee the fetch completes before the function terminates.
+  if (seerid) {
+    upsertLyticsProfileBySeerid(seerid, payload).catch(console.error)
+  } else {
+    console.warn('[weather] No seerid provided — weather fetched but not persisted to Lytics')
   }
 
-  // -- Response to AgentOS --------------------------------------------------
-  // Return a clean, human-readable summary alongside the raw fields so the
-  // agent can decide how to surface this to the visitor.
+  // -- Response -------------------------------------------------------------
   return NextResponse.json({
-    summary: `It's currently ${payload.weather_condition} in ${payload.weather_city}, ${payload.weather_country}. `
-           + `${payload.weather_temp_c}°C (feels like ${payload.weather_feels_like_c}°C), `
-           + `humidity ${payload.weather_humidity}%, wind ${payload.weather_wind_kph} km/h ${payload.weather_wind_dir}.`,
+    summary:
+      `It's currently ${payload.weather_condition} in ${payload.weather_city}, `
+      + `${payload.weather_country}. ${payload.weather_temp_c}°C `
+      + `(feels like ${payload.weather_feels_like_c}°C), `
+      + `humidity ${payload.weather_humidity}%, `
+      + `wind ${payload.weather_wind_kph} km/h ${payload.weather_wind_dir}.`,
     data: payload,
-    lytics_write_back: lyticsValue ? 'dispatched' : 'skipped (no lytics_value provided)',
+    meta: {
+      seerid_received: !!seerid,
+      lytics_upsert:   seerid ? 'dispatched → default stream' : 'skipped — no seerid',
+    },
   })
 }
