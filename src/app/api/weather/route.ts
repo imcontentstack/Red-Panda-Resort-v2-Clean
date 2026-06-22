@@ -1,26 +1,5 @@
-/**
- * Weather enrichment Route Handler
- * app/api/weather/route.ts
- *
- * Fetches live weather from WeatherAPI.com and upserts the result onto the
- * visitor's *existing* Lytics profile using their seerid as the identity anchor,
- * writing into the default "web" stream so no new profile or stream is created.
- *
- * Called by AgentOS as a tool. The agent resolves the visitor's seerid from
- * the Lytics profile context and passes it as a query parameter.
- *
- * Environment variables:
- *   WEATHERAPI_KEY     - WeatherAPI.com API key
- *   LYTICS_API_KEY     - Lytics account API key
- *   LYTICS_TAG         - Lytics account ID (numeric — reuses existing env var)
- *   AGENT_SECRET       - Shared secret to authenticate AgentOS tool calls
- */
-
 import { NextRequest, NextResponse } from 'next/server'
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
 interface WeatherPayload {
   weather_city: string
   weather_country: string
@@ -96,7 +75,7 @@ async function upsertLyticsProfileBySeerid(seerid: string, payload: WeatherPaylo
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ _seerid: seerid, ...payload }),
+    body: JSON.stringify({ _uid: seerid, ...payload }),
   })
   if (!res.ok) {
     console.error(`[weather] Lytics upsert failed: ${res.status} ${await res.text()}`)
