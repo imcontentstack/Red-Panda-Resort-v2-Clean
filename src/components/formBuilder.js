@@ -9,7 +9,7 @@ export default function FormBuilder({ content }) {
     if (!focusedFields.has(fieldName)) {
       focusedFields.add(fieldName);
       jstag.send({
-        event: "form_field_focus",
+        form_event: "form_field_focus",
         form_title: content?.title,
         field_name: fieldName,
         page_path: window.location.pathname,
@@ -19,7 +19,7 @@ export default function FormBuilder({ content }) {
 
   function handleRadioChange(groupTitle, value) {
     jstag.send({
-      event: "form_field_change",
+      form_event: "form_field_change",
       form_title: content?.title,
       field_name: groupTitle,
       field_type: "radio",
@@ -30,7 +30,7 @@ export default function FormBuilder({ content }) {
 
   function handleCheckboxChange(fieldName, checked) {
     jstag.send({
-      event: "form_field_change",
+      form_event: "form_field_change",
       form_title: content?.title,
       field_name: fieldName,
       field_type: "checkbox",
@@ -48,7 +48,7 @@ export default function FormBuilder({ content }) {
     formData.forEach((value, key) => (formValues[key] = value));
 
     jstag.send({
-      event: "form_submit",
+      form_event: "form_submit",
       form_title: content?.title,
       page_path: window.location.pathname,
       ...formValues,
@@ -101,7 +101,7 @@ export default function FormBuilder({ content }) {
                         {block?.text?.label}
                       </label>
                       <input
-                        name={"text" + index}
+                        name={block?.text?.label?.toLowerCase().replace(/\s+/g, "_") || "text" + index}
                         className="p-1 border text-black border-gray-200 bg-white w-full"
                         placeholder={block?.text?.placeholder_text}
                         onFocus={() => handleFieldFocus(block?.text?.label || "text" + index)}
@@ -123,7 +123,7 @@ export default function FormBuilder({ content }) {
                       </label>
                       <input
                         type="number"
-                        name={"number" + index}
+                        name={block?.number?.label?.toLowerCase().replace(/\s+/g, "_") || "number" + index}
                         className="p-1 border mr-0 text-black border-gray-200 bg-white w-full"
                         placeholder={block?.number?.placeholder}
                         onFocus={() => handleFieldFocus(block?.number?.label || "number" + index)}
@@ -152,7 +152,7 @@ export default function FormBuilder({ content }) {
                                 <input
                                   type="radio"
                                   value={option?.option_text}
-                                  name="option"
+                                  name={block?.radio?.title?.toLowerCase().replace(/\s+/g, "_") || "option"}
                                   onChange={() => handleRadioChange(block?.radio?.title, option?.option_text)}
                                 />
                                 <label className="p-2" {...option?.$?.option_text}>
@@ -178,7 +178,7 @@ export default function FormBuilder({ content }) {
                         </div>
                       </label>
                       <textarea
-                        name={"textarea" + index}
+                        name={block?.text_box?.label?.toLowerCase().replace(/\s+/g, "_") || "textarea" + index}
                         className="p-1 border text-black border-gray-200 bg-white w-full"
                         placeholder={block?.text_box?.placeholder_text}
                         onFocus={() => handleFieldFocus(block?.text_box?.label || "textarea" + index)}
@@ -196,7 +196,7 @@ export default function FormBuilder({ content }) {
                         <input
                           type="checkbox"
                           className="self-start"
-                          name={"checkbox" + index}
+                          name={block?.checkbox?.title?.toLowerCase().replace(/\s+/g, "_") || "checkbox" + index}
                           onChange={(e) => handleCheckboxChange(block?.checkbox?.title || "checkbox" + index, e.target.checked)}
                         />
                         <label
