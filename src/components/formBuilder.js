@@ -3,7 +3,6 @@ import { cslp } from "@/lib/cstack";
 
 export default function FormBuilder({ content }) {
 
-  // Track which fields have been focused (to fire once per field)
   const focusedFields = new Set();
 
   function handleFieldFocus(fieldName) {
@@ -45,16 +44,14 @@ export default function FormBuilder({ content }) {
 
     const formData = new FormData(e.target);
 
-    // Build a plain object of all form values for Lytics
     const formValues = {};
     formData.forEach((value, key) => (formValues[key] = value));
 
-    // Fire submit event to Lytics before posting
     jstag.send({
       event: "form_submit",
       form_title: content?.title,
       page_path: window.location.pathname,
-      ...formValues, // spreads all field values (name, email, radio, etc.)
+      ...formValues,
     });
 
     let result = await fetch("/api/formBuilder/", {
