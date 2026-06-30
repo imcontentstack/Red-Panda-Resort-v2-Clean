@@ -1,5 +1,14 @@
 import contentstack from '@contentstack/delivery-sdk';
 
+const LOCALE_MAP = {
+  'pl': 'pl-pl',
+};
+
+function resolveLocale(locale) {
+  const l = locale || 'en';
+  return LOCALE_MAP[l] ?? l;
+}
+
 function deserializeVariantIds (variantsQueryParam) {
   if(!variantsQueryParam) return '';
   return variantsQueryParam
@@ -38,7 +47,7 @@ const ContentstackServer = {
         .entry(id)
         .addParams({ "include_applied_variants": "true" })
         .variants(deserializeVariantIds(variantParam))
-        .locale(locale ? locale : "en")
+        .locale(resolveLocale(locale))
         .fetch()
         .then(
           function success(entry) {
@@ -63,7 +72,7 @@ const ContentstackServer = {
         .addParams({ "include_applied_variants": "true" })
         .variants(deserializeVariantIds(variantParam))
         .includeReference(...references)
-        .locale(locale ? locale : "en")
+        .locale(resolveLocale(locale))
         .fetch()
         .then(
           function success(entry) {
@@ -85,7 +94,7 @@ const ContentstackServer = {
     return new Promise((resolve, reject) => {
       stack.contentType(type)
         .entry()
-        .locale(locale ? locale : "en")
+        .locale(resolveLocale(locale))
         .variants(deserializeVariantIds(variantParam))
         .query()
         .equalTo("url", url)
@@ -112,7 +121,7 @@ getElementByUrlWithRefs(type, url, locale, references, live_preview, variantPara
      stack.contentType(type)
        .entry()
        .includeReference(...references)
-       .locale(locale ? locale : "en")
+       .locale(resolveLocale(locale))
        .variants(deserializeVariantIds(variantParam))
        .addParams({ "include_applied_variants": "true" })
        .query({ "url": { $eq: url } })
@@ -136,7 +145,7 @@ getElementByUrlWithRefs(type, url, locale, references, live_preview, variantPara
     return new Promise((resolve, reject) => {
       stack.contentType(type)
         .entry()
-        .locale(locale ? locale : "en")
+        .locale(resolveLocale(locale))
         .variants(deserializeVariantIds(variantParam))
         .addParams({ "include_applied_variants": "true" })
         .find()
@@ -161,7 +170,7 @@ getElementByUrlWithRefs(type, url, locale, references, live_preview, variantPara
       stack.contentType(type)
         .entry()
         .includeReference(...references)
-        .locale(locale ? locale : "en")
+        .locale(resolveLocale(locale))
         .variants(deserializeVariantIds(variantParam))
         .addParams({ "include_applied_variants": "true" })
         .find()
@@ -185,7 +194,7 @@ getElementByUrlWithRefs(type, url, locale, references, live_preview, variantPara
     return new Promise((resolve, reject) => {
       stack.contentType(type)
         .entry()
-        .locale(locale ? locale : "en")
+        .locale(resolveLocale(locale))
         .variants(deserializeVariantIds(variantParam))
         .addParams({ "include_applied_variants": "true" })
         .query({ "taxonomies.article": { $in: term } })
@@ -210,7 +219,7 @@ getElementByUrlWithRefs(type, url, locale, references, live_preview, variantPara
     return new Promise((resolve, reject) => {
       stack.contentType(type)
         .entry()
-        .locale(locale ? locale : "en")
+        .locale(resolveLocale(locale))
         .variants(deserializeVariantIds(variantParam))
         .addParams({ "include_applied_variants": "true" })
         .query({ "url": { $eq: url } })
@@ -235,7 +244,7 @@ getElementByUrlWithRefs(type, url, locale, references, live_preview, variantPara
     return new Promise((resolve, reject) => {
       stack.contentType(type)
         .entry()
-        .locale(locale ? locale : "en")
+        .locale(resolveLocale(locale))
         .variants(deserializeVariantIds(variantParam))
         .addParams({ "include_applied_variants": "true" })
         .query({ "url": { $eq:url } })
@@ -261,7 +270,7 @@ getElementByUrlWithRefs(type, url, locale, references, live_preview, variantPara
       stack.contentType(type)
         .entry()
         .includeReference(...references)
-        .locale(locale ? locale : "en")
+        .locale(resolveLocale(locale))
         .variants(deserializeVariantIds(variantParam))
         .addParams({ "include_applied_variants": "true" })
         .query({ "taxonomies.locations": { $in: term } })
