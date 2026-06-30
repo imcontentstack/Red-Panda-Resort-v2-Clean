@@ -361,6 +361,7 @@ export default function Header({ color, locale }) {
             <option value="es">ES</option>
             <option value="fr">FR</option>
             <option value="de">DE</option>
+            <option value="pl">PL</option>
           </select>
         </div>
 
